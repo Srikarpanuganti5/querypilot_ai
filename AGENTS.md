@@ -2,7 +2,8 @@
 
 ## Milestone discipline
 
-Day 1 is the repository foundation only. Read GOALS.md, PLANS.md,
+Day 1 established the repository foundation; Day 2 implements the FastAPI foundation.
+Read GOALS.md, PLANS.md,
 docs/architecture.md, and docs/progress.md before changing scope. Stop after the
 requested milestone; later milestones require a new request. User instructions
 take precedence over this file.
@@ -47,3 +48,7 @@ remote. Report the commit and push result. If authentication or the destination 
 finish the local work and ask for the missing information; never claim a push succeeded.
 Do not force-push or overwrite remote history. This preference does not authorize
 deployment or beginning the next milestone.
+
+The Day 2 request initially required approval before committing/pushing. The user has
+now explicitly approved committing and pushing Day 2. The daily workflow preference
+above remains in effect for future milestones unless a later request overrides it.

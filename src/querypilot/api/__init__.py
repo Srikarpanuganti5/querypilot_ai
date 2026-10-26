@@ -1,1 +1,1 @@
-"""Future HTTP API layer."""
+"""HTTP API routes, error handling, and request middleware."""

@@ -15,7 +15,9 @@ generated the highest revenue last month?”
 - Input validation, sanitized errors, deadlines, and logging.
 - Streamlit interface, automated tests, agent evaluations, Docker Compose, and CI.
 
-These capabilities are planned; none is operational on Day 1.
+Day 1 established the package foundation. Day 2 implements process health, API metadata,
+documentation, environment configuration, JSON logging, CORS, and error handling.
+Analytics, chat, database access, agent tools, and the UI remain planned.
 
 ## Quality and security
 
@@ -33,3 +35,13 @@ source control. Treat retrieval as untrusted and bound tool execution.
 - Structure, installation, smoke test, lint, and formatting validation recorded in progress.
 
 No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
+
+## Day 2 acceptance criteria
+
+- FastAPI starts with `uvicorn querypilot.main:app --reload`.
+- `/health` and `/api/v1/info` return the specified metadata without external services.
+- `/docs`, `/redoc`, and `/openapi.json` are accessible.
+- Environment settings, explicit-origin CORS, sanitized JSON errors, and JSON logs work.
+- Tests, lint, formatting, package imports, and actual local HTTP checks pass.
+- Documentation reflects implemented behavior; Day 1 smoke test remains intact.
+- No chat endpoint, database setup, LLM integration, or tools. Wait for commit approval.

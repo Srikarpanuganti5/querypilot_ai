@@ -1,1 +1,1 @@
-"""Future request, response, and tool argument schemas."""
+"""Public API response and error schemas."""

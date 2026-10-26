@@ -5,13 +5,18 @@ build-backend = "hatchling.build"
 [project]
 name = "querypilot-ai"
 version = "0.1.0"
-description = "Foundation for an intelligent business analytics agent"
+description = "Tool-Using LLM Agent API"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115,<1",
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.7,<3",
+    "uvicorn>=0.34,<1",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.3,<10", "ruff>=0.11,<1"]
+dev = ["pytest>=8.3,<10", "ruff>=0.11,<1", "httpx>=0.28,<1"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/querypilot"]

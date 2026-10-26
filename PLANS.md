@@ -1,13 +1,14 @@
 # Development roadmap
 
-Only Day 1 is authorized in this task. Each later milestone needs a new request.
+Days 1 and 2 are implemented. The user has approved the Day 2 commit and push. Day 3 and later
+milestones need a new request; no database or agent implementation has begun.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
 | Day | Scope | Intended validation |
 | --- | --- | --- |
 | 1 | Foundation, specifications, docs, import smoke test | Install, import, Pytest, Ruff, tree |
-| 2 | FastAPI application and `/health` | Endpoint tests without PostgreSQL or LLM calls |
+| 2 | FastAPI, `/health`, `/api/v1/info`, config, errors, logging, CORS | 24 tests and local HTTP checks passed |
 | 3 | PostgreSQL schema and synthetic e-commerce data | Constraints and repeatable seeding |
 | 4 | Restricted predefined SQL tools | Totals, arguments, write denial |
 | 5 | Document search and sources | Relevant retrieval and bounded excerpts |
@@ -30,8 +31,16 @@ the requested Day 9 interface and later Docker/CI milestones.
 5. Install/synchronize development dependencies and run the one smoke test and checks.
 6. Record actual results, show the final tree, and stop.
 
-## Day 2 boundary
+## Day 2 completion
 
-After a separate request, add FastAPI, Pydantic, and Uvicorn with dependency explanations.
-Build a minimal application and `/health`; add endpoint tests and a test HTTP client
-if needed. Keep PostgreSQL for Day 3, OpenAI for Day 6, and Streamlit for Day 9.
+FastAPI, Pydantic, Pydantic Settings, Uvicorn, and a development-only HTTP client are
+configured. The application exposes health, versioned info, and generated documentation.
+It uses validated environment settings, explicit CORS origins, sanitized errors, request
+IDs, and structured logs. The Day 1 test remains unchanged. See docs/progress.md for
+actual verification results. Approval to commit and push Day 2 has now been received.
+
+## Day 3 preparation
+
+After a separate request, design PostgreSQL products/orders/order-items tables and a
+reproducible synthetic dataset. Plan separate setup and restricted reader credentials,
+schema constraints, and repeat-safe seeding. No Day 3 code or dependencies are present.

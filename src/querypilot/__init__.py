@@ -1,1 +1,1 @@
-"""QueryPilot AI package foundation; features arrive in later milestones."""
+"""QueryPilot AI: FastAPI foundation for a future business analytics agent."""

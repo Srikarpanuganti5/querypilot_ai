@@ -6,9 +6,10 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 1 repository foundation.** The package can be installed and imported.
-API endpoints, database access, LLM tools, and the interface are not implemented. No
-database, API key, Docker installation, or paid service is needed for this milestone.
+**Current status: Day 2 FastAPI foundation.** Health, API metadata, generated documentation,
+environment configuration, error handling, structured logs, and CORS are implemented.
+Chat, database access, LLM tools, and the interface are not implemented. No database,
+API key, Docker installation, or paid service is needed for this milestone.
 
 ## Planned features
 
@@ -39,12 +40,17 @@ services, and configuration. See [architecture](docs/architecture.md) for bounda
 | Pytest | Automated tests, starting with package import | Day 1 development dependency |
 | Ruff | Linting, import sorting, formatting | Day 1 development dependency |
 | FastAPI, Pydantic, Uvicorn | HTTP API, validation, server | Day 2 |
+| Pydantic Settings | Typed environment and optional `.env` configuration | Day 2 |
+| HTTPX | FastAPI TestClient HTTP transport; development only | Day 2 |
 | PostgreSQL, SQLAlchemy, Psycopg | Database, models, driver | Day 3 |
 | OpenAI Python SDK | LLM function/tool calling | Day 6 |
 | Streamlit | Interactive analytics interface | Day 9 |
 | Docker Compose, GitHub Actions | Service orchestration and CI | Later milestones |
 
-Day 1 has **no runtime dependencies**. Future libraries will be added when used.
+Runtime dependencies are FastAPI, Pydantic, Pydantic Settings, and Uvicorn. Development
+dependencies are Pytest, Ruff, and HTTPX. Hatchling remains the isolated build dependency.
+Other libraries will be added when used. Uvicorn's base install supports `--reload`
+through polling, so no optional watcher or event-loop packages are required.
 
 ## Setup and validation
 
@@ -74,11 +80,64 @@ uv run --extra dev ruff format --check .
 ```
 
 `uv.lock` records resolved versions for uv users. The pip workflow uses compatible
-ranges in `pyproject.toml`. Neither workflow starts an application.
+ranges in `pyproject.toml`. Installation alone does not start the server.
 
-Optionally copy `.env.example` to `.env` for future local settings. Empty values are
-documentation only on Day 1; no loader reads them. Never commit `.env`, API keys,
-passwords, customer data, or production exports.
+## Start the backend
+
+With the virtual environment activated:
+
+```sh
+uvicorn querypilot.main:app --reload
+```
+
+Open http://127.0.0.1:8000/docs for Swagger UI, or http://127.0.0.1:8000/redoc for ReDoc.
+The HTML documentation pages reference CDN-hosted browser assets; the JSON API and
+OpenAPI specification work without loading those assets. `--reload` is for development.
+
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /health` | Process liveness, independent of databases and providers |
+| `GET /api/v1/info` | API name, package version, description |
+| `GET /docs` | Swagger UI |
+| `GET /redoc` | ReDoc |
+| `GET /openapi.json` | OpenAPI specification |
+
+```sh
+curl http://127.0.0.1:8000/health
+# {"status":"healthy","service":"querypilot-ai","version":"0.1.0"}
+curl http://127.0.0.1:8000/api/v1/info
+# {"name":"QueryPilot AI","version":"0.1.0","description":"Tool-Using LLM Agent API"}
+```
+
+`/api/v1/chat` is deliberately absent and returns 404. Health is not database readiness.
+
+## Configuration, errors, and logs
+
+All settings have working defaults. Optionally copy `.env.example` to `.env` and edit:
+
+```dotenv
+QUERYPILOT_LOG_LEVEL=INFO
+QUERYPILOT_CORS_ORIGINS=["http://localhost:8501"]
+```
+
+Environment variables override `.env`. Settings are validated once per process; restart
+the server after changing them. `QUERYPILOT_CORS_ORIGINS` defaults to `[]`, allowing no
+cross-origin browser access. Supply exact HTTP(S) origins as a JSON array, without paths,
+credentials, query strings, fragments, or wildcards. CORS is a browser policy, not
+authentication. The current API allows GET and does not enable credentialed CORS.
+Future database/OpenAI entries in `.env.example` are ignored and not used yet.
+
+Application HTTP errors use an `error` object with `code`, `message`, `request_id`, and
+`details`. Invalid requests receive 422; unknown routes 404; unexpected failures 500.
+Error responses exclude internal exception text, stack traces, and submitted values.
+The framework's CORS preflight responses retain their standard protocol format.
+
+Application logs are JSON on stderr. Request records contain generated IDs, method,
+route template, status, and duration; failure logs include the exception class only.
+Query strings, headers, bodies, settings, and exception messages are not logged.
+The standard Uvicorn access logger is disabled at application startup to avoid raw URL
+logging; Uvicorn's lifecycle logs remain separate. `X-Request-ID` correlates application
+responses with logs. Never commit `.env`, API keys, passwords, or private data.
 
 ## Development roadmap
 

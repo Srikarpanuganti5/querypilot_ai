@@ -1,1 +1,1 @@
-"""Future configuration and shared infrastructure."""
+"""Environment configuration and application logging."""
