@@ -13,6 +13,9 @@ dependencies = [
     "pydantic>=2.7,<3",
     "pydantic-settings>=2.7,<3",
     "uvicorn>=0.34,<1",
+    "sqlalchemy>=2.0,<3",
+    "psycopg[binary]>=3.2,<4",
+    "alembic>=1.14,<2",
 ]
 
 [project.optional-dependencies]
@@ -24,6 +27,7 @@ packages = ["src/querypilot"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
+markers = ["postgres: requires TEST_DATABASE_URL pointing to an expendable PostgreSQL database"]
 
 [tool.ruff]
 target-version = "py312"

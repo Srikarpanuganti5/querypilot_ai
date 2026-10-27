@@ -1,1 +1,1 @@
-"""Future database models and access layer."""
+"""PostgreSQL models, explicit sessions, synthetic fixtures, and verification."""
