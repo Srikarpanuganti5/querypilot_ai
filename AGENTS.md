@@ -2,7 +2,7 @@
 
 ## Milestone discipline
 
-Day 1 established the repository foundation; Day 2 implements the FastAPI foundation.
+Days 1–2 established the package and FastAPI foundation; Day 3 adds database infrastructure.
 Read GOALS.md, PLANS.md,
 docs/architecture.md, and docs/progress.md before changing scope. Stop after the
 requested milestone; later milestones require a new request. User instructions
@@ -49,6 +49,13 @@ finish the local work and ask for the missing information; never claim a push su
 Do not force-push or overwrite remote history. This preference does not authorize
 deployment or beginning the next milestone.
 
+Prefer multiple focused commits during a day's work, grouped by meaningful changes,
+rather than one large end-of-day commit. Respect any milestone-specific approval rule.
+
 The Day 2 request initially required approval before committing/pushing. The user has
 now explicitly approved committing and pushing Day 2. The daily workflow preference
 above remains in effect for future milestones unless a later request overrides it.
+
+The Day 3 attachment initially required approval before committing/pushing. The user
+has now explicitly approved pushing Day 3 with multiple focused commits. Use the groups
+schema/migrations, synthetic data/verification/tests, and setup/documentation.

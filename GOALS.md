@@ -17,7 +17,9 @@ generated the highest revenue last month?”
 
 Day 1 established the package foundation. Day 2 implements process health, API metadata,
 documentation, environment configuration, JSON logging, CORS, and error handling.
-Analytics, chat, database access, agent tools, and the UI remain planned.
+Day 3 adds the PostgreSQL schema, migrations, explicit database transactions, a synthetic
+dataset, developer queries, and verification. API startup and health remain independent
+of the database. Agent analytics tools, chat, and the UI remain planned.
 
 ## Quality and security
 
@@ -45,3 +47,16 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Tests, lint, formatting, package imports, and actual local HTTP checks pass.
 - Documentation reflects implemented behavior; Day 1 smoke test remains intact.
 - No chat endpoint, database setup, LLM integration, or tools. Wait for commit approval.
+
+## Day 3 acceptance criteria
+
+- Six related PostgreSQL tables, named constraints/indexes, UTC timestamps, Decimal money.
+- Explicit engine/session configuration, bounded pooling, sanitized DB failures.
+- Alembic initial migration; no automatic table creation.
+- Reproducible seed: 500 customers, 100 products, 3,000 orders, approximately 6,000 items,
+  applicable payment/refund scenarios with reconciled amounts and repeat-safe loading.
+- PostgreSQL-only Compose configuration, optional distinct SELECT-only reader role.
+- Database verifier, sample developer SQL, Mermaid ER diagram, documented accounting.
+- Independent unit tests and clearly marked real PostgreSQL integration tests.
+- Actual migration/seed/query/test results and unavailable checks reported honestly.
+- No agent tools, LLM integration, UI, or new API routes. Wait for commit approval.

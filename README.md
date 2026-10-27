@@ -6,10 +6,10 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 2 FastAPI foundation.** Health, API metadata, generated documentation,
-environment configuration, error handling, structured logs, and CORS are implemented.
-Chat, database access, LLM tools, and the interface are not implemented. No database,
-API key, Docker installation, or paid service is needed for this milestone.
+**Current status: Day 3 database foundation.** The six-table PostgreSQL schema, Alembic
+migrations, reproducible synthetic data, explicit sessions, and developer verification
+are implemented alongside the existing FastAPI foundation. Chat, LLM tools, and the UI
+are not implemented. API health/docs/tests still work without a database or API key.
 
 ## Planned features
 
@@ -43,11 +43,13 @@ services, and configuration. See [architecture](docs/architecture.md) for bounda
 | Pydantic Settings | Typed environment and optional `.env` configuration | Day 2 |
 | HTTPX | FastAPI TestClient HTTP transport; development only | Day 2 |
 | PostgreSQL, SQLAlchemy, Psycopg | Database, models, driver | Day 3 |
+| Alembic | Versioned database schema migrations | Day 3 |
 | OpenAI Python SDK | LLM function/tool calling | Day 6 |
 | Streamlit | Interactive analytics interface | Day 9 |
 | Docker Compose, GitHub Actions | Service orchestration and CI | Later milestones |
 
-Runtime dependencies are FastAPI, Pydantic, Pydantic Settings, and Uvicorn. Development
+Runtime dependencies are FastAPI, Pydantic, Pydantic Settings, Uvicorn, SQLAlchemy,
+Psycopg (binary driver wheel), and Alembic. Development
 dependencies are Pytest, Ruff, and HTTPX. Hatchling remains the isolated build dependency.
 Other libraries will be added when used. Uvicorn's base install supports `--reload`
 through polling, so no optional watcher or event-loop packages are required.
@@ -125,7 +127,8 @@ the server after changing them. `QUERYPILOT_CORS_ORIGINS` defaults to `[]`, allo
 cross-origin browser access. Supply exact HTTP(S) origins as a JSON array, without paths,
 credentials, query strings, fragments, or wildcards. CORS is a browser policy, not
 authentication. The current API allows GET and does not enable credentialed CORS.
-Future database/OpenAI entries in `.env.example` are ignored and not used yet.
+Database settings in `.env.example` are used only by explicit database commands; OpenAI
+entries remain unused. Starting the API never connects to PostgreSQL or migrates tables.
 
 Application HTTP errors use an `error` object with `code`, `message`, `request_id`, and
 `details`. Invalid requests receive 422; unknown routes 404; unexpected failures 500.
@@ -138,6 +141,55 @@ Query strings, headers, bodies, settings, and exception messages are not logged.
 The standard Uvicorn access logger is disabled at application startup to avoid raw URL
 logging; Uvicorn's lifecycle logs remain separate. `X-Request-ID` correlates application
 responses with logs. Never commit `.env`, API keys, passwords, or private data.
+
+## PostgreSQL and synthetic data
+
+Copy `.env.example` to `.env`, choose local database credentials, and set `DATABASE_URL`
+using `postgresql+psycopg://USER:ENCODED_PASSWORD@localhost:5432/querypilot`.
+The `POSTGRES_*` values configure Compose; keep them consistent with the URL. The
+example provides no password. See [database setup and accounting](docs/database.md).
+
+```sh
+docker compose up -d db
+alembic upgrade head
+alembic check
+python -m querypilot.db.seed --reference-date 2026-10-27 --random-seed 42
+python -m querypilot.db.verify --reference-date 2026-10-27 --random-seed 42
+```
+
+Only PostgreSQL runs in Compose. A persistent volume preserves data; no full application
+deployment is included. Native PostgreSQL is also supported through `DATABASE_URL`.
+No tables are created automatically: run Alembic explicitly before seeding.
+
+The reference fixture contains **500 customers, 100 products, 3,000 orders, 6,000 items,
+3,006 payments, and 120 refunds**. It covers the preceding twelve calendar months relative
+to the explicit reference date. Rerunning the same fixture is a no-op; different or edited
+existing data is refused without overwriting it. Identities are synthetic and emails use
+`example.invalid`. No Faker dependency or external data download is needed.
+
+Money uses Decimal/NUMERIC in USD; timestamps use UTC. Order totals equal item totals.
+Completed-order revenue excludes pending, cancelled, and fully refunded orders. Failed
+payments are attempts, never collected revenue. Refunds are full-order in this fixture
+and never exceed their successful payment. See the [accounting contract](docs/database.md)
+for cash-versus-status semantics, simplifications, and cross-row verification limits.
+
+The [developer SQL examples](data/sample/analytics.sql) include monthly revenue, top five
+products, refunds by category, customer order counts, and failed payments. Run them with
+`psql -v ON_ERROR_STOP=1 -f data/sample/analytics.sql` using local PG authentication settings.
+They are not exposed as agent tools. Configure the separate SELECT-only reader role using
+[reader-role instructions](docs/database.md#read-only-role-provisioning) before Day 4.
+
+```sh
+# Independent tests, including existing API checks:
+pytest -q -m 'not postgres'
+# With TEST_DATABASE_URL set to an expendable PostgreSQL database:
+pytest -q -m postgres
+```
+
+Database tests use actual Alembic migrations in isolated temporary schemas; they require
+CREATE SCHEMA privileges. They skip explicitly when `TEST_DATABASE_URL` is absent.
+Do not point tests at production. See [actual results](docs/progress.md): native PostgreSQL
+was tested; Docker daemon/container startup was unavailable in this environment.
 
 ## Development roadmap
 
@@ -153,6 +205,7 @@ See [PLANS.md](PLANS.md) for the detailed proposed sequence.
 - [GOALS.md](GOALS.md): product scope, security goals, Day 1 acceptance criteria.
 - [PLANS.md](PLANS.md): roadmap and implementation plan.
 - [docs/architecture.md](docs/architecture.md): planned components and dependencies.
+- [docs/database.md](docs/database.md): PostgreSQL setup, ER diagram, accounting and reader access.
 - [docs/progress.md](docs/progress.md): implementation and verification status.
 - [data/sample/](data/sample/README.md): fixture policy; dataset planned for Day 3.
 

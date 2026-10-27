@@ -1,11 +1,47 @@
 # Architecture
 
-## Current state: Day 2
+## Current state: Day 3
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
-and sanitized exception handling. There is no database connection, LLM integration, chat
-endpoint, frontend, Docker configuration, or CI workflow.
+and sanitized exception handling. Day 3 adds PostgreSQL infrastructure invoked explicitly
+by migration, seed, and verification commands. API initialization remains database-free.
+There is no LLM integration, chat endpoint, frontend, full application deployment, or CI.
+
+## Database architecture
+
+`db/models.py` defines six typed SQLAlchemy entities and bidirectional relationships.
+Alembic migration `0001` creates their tables, named constraints, FK and analytics indexes,
+and partial uniqueness for successful payments. `create_all` is not used.
+
+```mermaid
+erDiagram
+    customers ||--o{ orders : places
+    orders ||--|{ order_items : contains
+    products ||--o{ order_items : appears_in
+    orders ||--o{ payments : has_attempts
+    payments ||--o{ refunds : receives
+```
+
+The detailed column diagram and accounting contract are in [database.md](database.md).
+`db/session.py` lazily creates pooled PostgreSQL/Psycopg engines. Connection/lock/statement
+and pool-wait timeouts are bounded. Each operation uses a sessionmaker transaction with
+explicit commit/rollback/close boundaries, following SQLAlchemy's
+[session context-manager pattern](https://docs.sqlalchemy.org/en/20/orm/session_basics.html).
+SQLAlchemy errors are translated to a fixed diagnostic without driver SQL/parameters.
+Connection URLs are SecretStr settings and SQL parameter logging is hidden.
+
+Data flow is: reference date + local RNG → in-memory fixture → one locked writer
+transaction → PostgreSQL → read-only verifier/developer SQL. Seed refuses to mix different
+fixtures or overwrite partial/edited data. Tables enforce row-local constraints and FKs;
+cross-row totals/refund/status invariants are checked by seed/verification, not triggers.
+Future writers must preserve them explicitly.
+
+`DATABASE_URL` is the migration/seed writer. `READER_DATABASE_URL` is distinct, for a
+SELECT-only role provisioned after migrations. The reader receives no DML/schema/TEMP
+privileges and owns no tables; read-only session defaults add defense in depth. No agent
+tool registry is implemented yet. Compose contains only the persistent development
+PostgreSQL service; Docker's container runtime was not available during verification.
 
 ## FastAPI composition
 
@@ -84,8 +120,9 @@ for package imports rather than relying on application code at the repository ro
 ## Technology and security
 
 Python 3.12 is the baseline. FastAPI, Pydantic, Pydantic Settings, and Uvicorn support the
-current backend. Pytest, Ruff, and HTTPX support development and tests. PostgreSQL/SQLAlchemy,
-OpenAI tool calling, Streamlit, Docker Compose, and GitHub Actions arrive later.
+current backend. SQLAlchemy, Psycopg, and Alembic support the explicit database workflow.
+Pytest, Ruff, and HTTPX support development and tests. OpenAI tool calling, Streamlit,
+full Docker deployment, and GitHub Actions arrive later.
 
 There will be no arbitrary SQL interface. Tools will accept validated business parameters
 for code-owned queries. Agent credentials will be read-only and separate from setup
