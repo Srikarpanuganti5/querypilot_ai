@@ -14,6 +14,10 @@ from querypilot.core.config import Settings
 class DatabaseError(Exception):
     """Safe database diagnostic with no SQL, credentials, or driver text."""
 
+    def __init__(self, message: str, *, code: str = "database_error"):
+        super().__init__(message)
+        self.code = code
+
 
 def database_url(settings: Settings, *, reader: bool = False) -> URL:
     secret = settings.reader_database_url if reader else settings.database_url
@@ -38,7 +42,11 @@ class Database:
         try:
             with self.sessions.begin() as session:
                 yield session
-        except SQLAlchemyError:
+        except SQLAlchemyError as exc:
+            if getattr(getattr(exc, "orig", None), "sqlstate", None) == "57014":
+                raise DatabaseError(
+                    "Database query timed out; transaction rolled back.", code="timeout"
+                ) from None
             raise DatabaseError("Database operation failed; transaction rolled back.") from None
 
     def close(self) -> None:
