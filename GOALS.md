@@ -19,7 +19,8 @@ Day 1 established the package foundation. Day 2 implements process health, API m
 documentation, environment configuration, JSON logging, CORS, and error handling.
 Day 3 adds the PostgreSQL schema, migrations, explicit database transactions, a synthetic
 dataset, developer queries, and verification. API startup and health remain independent
-of the database. Agent analytics tools, chat, and the UI remain planned.
+of the database. Day 4 adds five approved read-only analytics tools and a provider-neutral
+registry. LLM integration, chat, document search, and the UI remain planned.
 
 ## Quality and security
 
@@ -60,3 +61,14 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Independent unit tests and clearly marked real PostgreSQL integration tests.
 - Actual migration/seed/query/test results and unavailable checks reported honestly.
 - No agent tools, LLM integration, UI, or new API routes. Wait for commit approval.
+
+## Day 4 acceptance criteria
+
+- Five approved analytics operations with validated inputs and typed, bounded outputs.
+- No caller SQL, dynamic SQL identifiers, writer fallback, or customer personal fields.
+- Dedicated reader credentials, per-call role checks, read-only transactions, DB timeouts.
+- Accurate completed revenue, product contributions, refunds, customer and payment aggregates.
+- Consistent safe errors and structured tool name/status/duration logs without arguments.
+- Actual PostgreSQL integration tests for accounting, permissions, cancellation and recovery.
+- Existing Day 1–3 behavior retained; documentation and real demonstrations recorded.
+- No LLM, function calling, chat, or UI. Wait for commit approval and stop before Day 5.

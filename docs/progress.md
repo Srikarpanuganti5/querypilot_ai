@@ -239,3 +239,127 @@ invariants must be preserved by future business workflows. See database.md for d
 
 Day 4, only after a separate request: approved parameterized read-only analytics queries,
 validated date/result limits, bounded execution, and tests using the restricted reader.
+
+## Day 4 — secure read-only analytics tools (2026-10-28)
+
+Status: implemented and verified against PostgreSQL with the restricted reader role.
+Docker startup remains pending because the daemon is unavailable; this is not a blocker
+for the completed PostgreSQL checks. The user has now explicitly approved committing
+and pushing Day 4. Focused commit groups are recorded in PLANS.md.
+
+### Implementation and files
+
+- Added `schemas/analytics.py`: strict, extra-forbidden inputs, bounded typed outputs,
+  Decimal money and a validated success/error envelope.
+- Added `db/analytics.py`: five code-owned SELECT builders, UTC filters, deterministic
+  sorting, row/fetch caps, read-only transactions, statement timeouts and a per-call role audit.
+- Added `tools/registry.py`: fixed allowlist, schema descriptions, validation, dispatch,
+  output validation, safe errors and execution logs independent of any LLM provider.
+- Added `tools/__main__.py`: developer-only CLI with JSON results and meaningful exit codes.
+- Added `tests/test_tools.py` and `tests/test_tools_postgres.py`: contract, injection-shaped
+  rejection, privacy, accounting, bounds, permission and actual timeout tests.
+- Extended `db/session.py` to classify PostgreSQL cancellation without exposing driver
+  details, and `core/logging.py` to allowlist tool name/status fields.
+- Updated `.env.example`, tools package documentation, README, GOALS.md, AGENTS.md,
+  PLANS.md, architecture/database guides, and added `docs/tools.md`.
+- No new dependencies, migrations, data writes through tools, HTTP routes, LLM integration,
+  document search, chatbot, or frontend. Existing Day 1–3 tests and API/schema/migrations
+  remain unchanged.
+
+The tools are get_top_products, get_revenue_summary, get_refund_analytics,
+get_customer_order_summary, and get_payment_status_summary. Complete schemas, accounting,
+date semantics, caps and invocation examples are documented in tools.md.
+
+### Actual commands and results
+
+Git inspection before editing showed clean `main...origin/main`.
+
+| Command/check | Actual result |
+| --- | --- |
+| Docker info | Failed: Docker daemon socket unavailable; container startup still unverified. |
+| Sandboxed PostgreSQL status/readiness | Could not observe the outside-sandbox server. |
+| Approved `pg_ctl ... start` | Did not start another server: existing postmaster lock detected. No lock files removed. |
+| Approved `pg_isready -h 127.0.0.1 -p 55432` | Existing server accepting connections. |
+| Existing independent tests before tool tests | 34 passed. |
+| New plus existing independent suite | 74 passed; no PostgreSQL required. |
+| Complete suite with TEST_DATABASE_URL and TEST_READER_DATABASE_URL | **106 passed**, 1 existing dependency warning, in 5.22s. Includes all prior 48 tests. |
+| Final targeted restricted-reader suite after strengthening read-only observation | **18 passed** in 1.08s. |
+| Full pytest without database variables | **74 passed, 32 skipped**, 1 warning, in 0.41s. Integration skips are explicit. |
+| `ruff check .` | All checks passed. |
+| `ruff format --check .` | 44 files already formatted. |
+| Offline `uv lock --check` | Passed; 34 packages, no dependency changes. |
+| `git diff --check` | Passed. |
+| Top-products CLI against actual seeded PostgreSQL | Exit 0; five validated product rows, truncated=true, JSON tool status/duration log. |
+| Other four operations through the real reader registry | All returned success and validated actual rows; examples below. |
+| CLI with an empty reader URL and a writer URL present | Exit 1, configuration_error; no writer fallback. |
+| Existing health/info/docs/redoc/OpenAPI requests using TestClient with no database | All returned 200. |
+| Existing tests, FastAPI composition, models and migration diffs | Empty; preserved unchanged. |
+| Tracked/pending file check | No `.env` or `.venv` files; no recognized OpenAI/GitHub/private-key patterns. Targeted scan, not an exhaustive secret audit. |
+
+Full database regression command used the isolated local writer/reader URLs from Day 3:
+
+```sh
+# Set both URLs securely in the environment before running:
+TEST_DATABASE_URL=... TEST_READER_DATABASE_URL=... .venv/bin/python -m pytest -q
+```
+
+Developer CLI executed, with the existing restricted URL supplied via the environment:
+
+```sh
+python -m querypilot.tools get_top_products --arguments '{"limit":5}'
+```
+
+### Real tool results
+
+The existing Day 3 fixture (reference 2026-10-27, seed 42) was queried without changing
+its business rows. Actual outputs included:
+
+- Top products: IDs 64, 35, 21, 76, 63 with USD revenues 37,882.39; 36,509.32;
+  35,946.86; 35,386.60; 34,591.86. First product: Outdoors Product 064, 144 units.
+- Monthly completed-order revenue: 13 buckets; January 2026 had 209 completed orders
+  and USD 160,833.26. The rolling-year fixture spans partial months at its endpoints.
+- Refund analytics: five categories; Outdoors USD 26,590.28, Electronics 22,571.93,
+  Office 19,494.82, Home 17,678.83, Sports 11,942.18. Counts are category-local,
+  not additive across categories.
+- Customer summary with limit 2: IDs 156 and 339 each had 13 orders; completed revenues
+  USD 4,815.22 and USD 8,107.08. No names, emails, cities or states were selected/returned.
+- Payments: 486 failed attempts totaling USD 358,283.06 and 2,520 successful payments
+  totaling USD 1,888,399.87. Failed amounts are attempted charges, not revenue.
+
+### Security and accounting verification
+
+Tests use fresh isolated schemas migrated with Alembic and explicitly grant SELECT/USAGE
+to the existing restricted reader. Admin/writer credentials supplied to the analytics
+repository are rejected. Unknown names, SQL-shaped parameters, extras, invalid IDs,
+invalid date windows and oversized limits fail before database access. Outputs reject
+unexpected customer personal fields and serialize money without float conversion.
+
+Hand-calculated fixtures cover inclusive/exclusive UTC dates, tie sorting, completed-only
+revenue, payment retries without revenue multiplication, category count semantics, refund
+date attribution, missing/zero-order customers, failed amounts and empty tables. A long
+history test confirms the 400-row revenue cap and explicit truncation.
+
+With read-only mode disabled, direct INSERT, UPDATE, DELETE, DROP, ALTER, CREATE TABLE
+and CREATE TEMP TABLE attempts all failed with PostgreSQL insufficient-privilege code
+`42501`. A test-only slow SELECT triggered actual server cancellation; the public result
+was timeout, the transaction rolled back, the connection returned to the pool, and a
+subsequent approved call succeeded. That test also observes transaction_read_only=on
+inside the running tool after explicitly turning the connection default off.
+
+### Problems, limits and Day 5 preparation
+
+The first integration run had 9 failures and 96 passes: PostgreSQL needed an explicit
+text cast for the bound table name in the privilege audit's format() call. The cast was
+added without interpolating caller strings. Initial test logging also reused a closed
+pytest capture stream; new tests now isolate/configure their logging streams. Long lines
+and import ordering were fixed before final lint/format checks. The existing upstream
+FastAPI/Starlette HTTPX deprecation warning remains nonfatal.
+
+Timeouts are per SQL statement, not a whole-agent deadline. Role checks cover the active
+schema's six tables and relevant role/database capabilities, not every object in the
+cluster. Category counts are not globally additive. Partial-refund item attribution is
+still the documented Day 3 simplification. Docker runtime remains unverified. No unresolved
+restricted-role or analytics verification blocker remains.
+
+Day 5, after a separate request: bounded document search over synthetic business documents,
+source identifiers, retrieval tests, and untrusted-content handling. No Day 5 code has begun.

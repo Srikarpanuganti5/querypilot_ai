@@ -6,9 +6,9 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 3 database foundation.** The six-table PostgreSQL schema, Alembic
+**Current status: Day 4 read-only analytics tools.** The six-table PostgreSQL schema, Alembic
 migrations, reproducible synthetic data, explicit sessions, and developer verification
-are implemented alongside the existing FastAPI foundation. Chat, LLM tools, and the UI
+are implemented alongside five approved analytics tools and the FastAPI foundation. Chat, LLM integration, and the UI
 are not implemented. API health/docs/tests still work without a database or API key.
 
 ## Planned features
@@ -191,6 +191,41 @@ CREATE SCHEMA privileges. They skip explicitly when `TEST_DATABASE_URL` is absen
 Do not point tests at production. See [actual results](docs/progress.md): native PostgreSQL
 was tested; Docker daemon/container startup was unavailable in this environment.
 
+## Read-only analytics tools
+
+Day 4 adds five predefined operations, with validated inputs/outputs, bounded results,
+UTC date filters, structured errors/logs, and PostgreSQL query timeouts. No new dependencies
+were needed. There is no arbitrary SQL interface or analytics HTTP endpoint.
+
+| Tool | Parameters |
+| --- | --- |
+| `get_top_products` | optional dates, `limit=5` (max 20) |
+| `get_revenue_summary` | optional dates, `group_by=day/month/category` (default month) |
+| `get_refund_analytics` | optional dates, `limit=10` (max 20) |
+| `get_customer_order_summary` | optional positive customer ID, `limit=10` (max 20); no customer PII |
+| `get_payment_status_summary` | optional dates; successful/failed attempts kept separate |
+
+Provision the dedicated reader as described in [database setup](docs/database.md#read-only-role-provisioning),
+then set `READER_DATABASE_URL` in your local `.env`. This URL is mandatory for tools;
+writer credentials are never used as a fallback. A privilege audit rejects elevated roles,
+table owners, memberships, and write/schema/TEMP privileges. Every execution explicitly
+uses a read-only transaction. Runtime queries use SQLAlchemy/Psycopg, not shell commands.
+
+```sh
+python -m querypilot.tools get_top_products --arguments '{"limit":5}'
+python -m querypilot.tools get_revenue_summary --arguments '{"group_by":"month"}'
+pytest -q -m 'not postgres'
+# After setting TEST_DATABASE_URL (writer) and TEST_READER_DATABASE_URL (reader):
+pytest -q -m postgres
+```
+
+Dates use inclusive start/exclusive end in UTC. Supplied two-sided ranges are capped at
+366 days; omitted bounds cover available history. Results serialize Decimal money as
+strings, mark truncation explicitly, and expose no customer names/emails. Revenue counts
+current completed orders, excluding fully refunded orders; payment settlement and refund
+dates follow separate rules. Read the [tool contracts and security guide](docs/tools.md)
+before interpreting these aggregates. FastAPI still requires no database at startup.
+
 ## Development roadmap
 
 Day 1 establishes the foundation. Day 2 adds FastAPI and health; Day 3 introduces
@@ -206,6 +241,7 @@ See [PLANS.md](PLANS.md) for the detailed proposed sequence.
 - [PLANS.md](PLANS.md): roadmap and implementation plan.
 - [docs/architecture.md](docs/architecture.md): planned components and dependencies.
 - [docs/database.md](docs/database.md): PostgreSQL setup, ER diagram, accounting and reader access.
+- [docs/tools.md](docs/tools.md): approved analytics contracts, security model, CLI and tests.
 - [docs/progress.md](docs/progress.md): implementation and verification status.
 - [data/sample/](data/sample/README.md): fixture policy; dataset planned for Day 3.
 

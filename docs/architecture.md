@@ -1,12 +1,48 @@
 # Architecture
 
-## Current state: Day 3
+## Current state: Day 4
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
 and sanitized exception handling. Day 3 adds PostgreSQL infrastructure invoked explicitly
 by migration, seed, and verification commands. API initialization remains database-free.
 There is no LLM integration, chat endpoint, frontend, full application deployment, or CI.
+
+## Analytics tools and execution flow
+
+```mermaid
+flowchart LR
+    A[User request] --> B[Tool registry]
+    B --> C[Input validation]
+    C --> D[Approved SQL operation]
+    D --> E[Read-only PostgreSQL]
+    E --> F[Structured results]
+```
+
+`schemas/analytics.py` defines five input schemas, typed per-operation output schemas,
+and a consistent success/error envelope. `tools/registry.py` exposes a fixed allowlist,
+schemas/descriptions, validation and dispatch, without an LLM-specific format or dynamic
+registration. `tools/__main__.py` is a developer CLI; no HTTP endpoint was added.
+
+`db/analytics.py` contains fixed SQLAlchemy SELECT builders. The allowlisted grouping
+selects code-owned expressions; supplied dates/IDs/limits become bind parameters. Queries
+select only approved fields, with explicit SQL/fetch bounds. Revenue uses completed orders;
+payments and refunds use their own dates/accounting semantics, avoiding multiplied sums.
+See [tools.md](tools.md) for exact rules, per-category count semantics and truncation.
+
+Every tool execution uses the separately configured reader engine, a read-only transaction,
+and a local statement timeout. Before selecting analytics data, a role audit rejects
+elevated flags/memberships, role switching, table ownership, DML privileges, database
+CREATE/TEMP and schema CREATE, and requires SELECT on all six tables. No writer URL
+fallback exists. The audit concerns the active analytics schema, not all cluster objects.
+Database privileges remain the write barrier when session defaults are disabled.
+
+Registry results validate before serialization; Decimal money is emitted as strings.
+Unknown/malformed calls fail before database access. PostgreSQL cancellation maps to a
+stable timeout code after rollback; raw driver/SQL/credential details are excluded.
+Application logs allowlist only known tool name, status and elapsed time, never arguments
+or customer personal fields. Query timeouts are per statement; a whole-agent deadline is
+outside Day 4. The existing pool/connection bounds remain in effect.
 
 ## Database architecture
 
@@ -39,8 +75,8 @@ Future writers must preserve them explicitly.
 
 `DATABASE_URL` is the migration/seed writer. `READER_DATABASE_URL` is distinct, for a
 SELECT-only role provisioned after migrations. The reader receives no DML/schema/TEMP
-privileges and owns no tables; read-only session defaults add defense in depth. No agent
-tool registry is implemented yet. Compose contains only the persistent development
+privileges and owns no tables; read-only session defaults add defense in depth. The Day 4
+registry uses this reader configuration. Compose contains only the persistent development
 PostgreSQL service; Docker's container runtime was not available during verification.
 
 ## FastAPI composition

@@ -168,7 +168,8 @@ an insertion fails; row changes still roll back atomically.
 ## Read-only role provisioning
 
 Migration/seeding uses a writer role. Future agent access must use the distinct
-`querypilot_reader` role and `READER_DATABASE_URL`. Day 3 does not expose analytics tools.
+`querypilot_reader` role and `READER_DATABASE_URL`. Day 4's approved tools use this
+configuration; see [tools.md](tools.md). Day 3's SQL examples remain developer-only.
 After migrations, connect as the table owner/admin using psql's PG environment variables
 or local connection options. `psql` needs a `postgresql://` URL, not SQLAlchemy's
 `postgresql+psycopg://` URL.
@@ -229,5 +230,5 @@ psql -v ON_ERROR_STOP=1 -f data/sample/analytics.sql
 ```
 
 Use your PG environment/local authentication for psql. These queries are not registered
-as LLM-accessible tools. Day 4 will introduce approved, parameterized, read-only analytics
-operations and execution/result bounds.
+as LLM-accessible tools. Day 4's separate registry provides approved, parameterized,
+read-only analytics operations with execution/result bounds; it has no LLM integration.

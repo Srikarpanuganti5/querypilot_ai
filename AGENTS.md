@@ -2,7 +2,8 @@
 
 ## Milestone discipline
 
-Days 1–2 established the package and FastAPI foundation; Day 3 adds database infrastructure.
+Days 1–3 established the package, FastAPI, and database foundation. Day 4 adds approved
+read-only analytics tools without LLM integration or new API endpoints.
 Read GOALS.md, PLANS.md,
 docs/architecture.md, and docs/progress.md before changing scope. Stop after the
 requested milestone; later milestones require a new request. User instructions
@@ -59,3 +60,7 @@ above remains in effect for future milestones unless a later request overrides i
 The Day 3 attachment initially required approval before committing/pushing. The user
 has now explicitly approved pushing Day 3 with multiple focused commits. Use the groups
 schema/migrations, synthetic data/verification/tests, and setup/documentation.
+
+The Day 4 attachment initially required commit/push approval. The user has now explicitly
+approved pushing Day 4. Use focused commits for analytics contracts/queries,
+registry/security tests, and documentation. Do not begin Day 5 or integrate an LLM or frontend.

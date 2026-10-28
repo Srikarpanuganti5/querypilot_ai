@@ -1,9 +1,9 @@
 # Development roadmap
 
-Days 1 and 2 are implemented and pushed. Day 3 database implementation is present and
-verified against native PostgreSQL; Docker container startup remains unverified because
-the Docker daemon is unavailable. The user has approved focused Day 3 commits and a push. Day 4 and later
-milestones require a new request; no agent implementation has begun.
+Days 1–3 are implemented and pushed. Day 4 adds the approved analytics registry and
+restricted PostgreSQL execution; verification results are recorded in docs/progress.md.
+Docker container startup remains pending because the daemon is unavailable. Day 4 changes
+have explicit commit/push approval from the user's follow-up. Day 5 and later milestones need a new request.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -12,7 +12,7 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 1 | Foundation, specifications, docs, import smoke test | Install, import, Pytest, Ruff, tree |
 | 2 | FastAPI, `/health`, `/api/v1/info`, config, errors, logging, CORS | 24 tests and local HTTP checks passed |
 | 3 | Six-table schema, Alembic, synthetic data, verifier, PostgreSQL-only Compose | Native PostgreSQL migration/seed/accounting and regression tests; see progress |
-| 4 | Restricted predefined SQL tools | Totals, arguments, write denial |
+| 4 | Five validated analytics operations, registry, CLI, reader role audit and timeouts | Accounting, rejection, privacy, bounds, actual PostgreSQL permission/timeout tests |
 | 5 | Document search and sources | Relevant retrieval and bounded excerpts |
 | 6 | OpenAI integration and tool schemas | Mocked protocol tests; opt-in live checks |
 | 7 | Multi-step orchestration and traces | Loop bounds and evidence propagation |
@@ -52,8 +52,17 @@ actual verification results. Approval to commit and push Day 2 has now been rece
 Keep these as focused commit groups, in line with the user's preference. The user has
 now explicitly approved committing and pushing Day 3.
 
-## Day 4 prerequisites
+## Day 4 implementation and review groups
 
-After a separate request, introduce approved parameterized read-only analytics operations
-using the separate reader role. Use the documented completed-order revenue definition,
-validate time windows and result limits, and test privilege denials and execution bounds.
+1. Analytics contracts and queries: typed schemas, fixed SELECT builders, role audit and
+   safe timeout classification in the existing session layer.
+2. Registry, developer CLI, structured logging fields and unit/PostgreSQL security tests.
+3. Tool contracts, setup/accounting guidance, architecture, roadmap and actual progress.
+
+The user has approved committing and pushing Day 4. Keep these as focused commits.
+
+## Day 5 preparation
+
+After a separate request, add document search over synthetic business documents with
+bounded excerpts and source identifiers. Treat retrieved text as untrusted. No document
+search, LLM/provider integration, or UI is included in Day 4.
