@@ -1,1 +1,1 @@
-"""Future bounded LLM orchestration."""
+"""Single-round model/tool orchestration; autonomous multi-step work is deferred."""

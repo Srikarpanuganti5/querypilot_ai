@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import sys
 
 from pydantic import ValidationError
 
@@ -13,6 +14,11 @@ from querypilot.tools.registry import create_registry
 
 
 def main() -> None:
+    if sys.argv[1:2] == ["ask"]:
+        from querypilot.agent.cli import main as ask_main
+
+        ask_main(sys.argv[2:])
+        return
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("tool")
     parser.add_argument("--arguments", default="{}", help="JSON object of tool arguments")
