@@ -29,6 +29,16 @@ class Settings(BaseSettings):
     db_pool_timeout: int = Field(default=5, ge=1, le=30)
     db_statement_timeout_ms: int = Field(default=5000, ge=100, le=30000)
     documents_path: Path = Path("data/documents")
+    openai_api_key: SecretStr | None = Field(default=None, validation_alias="OPENAI_API_KEY")
+    openai_model: str | None = Field(default=None, validation_alias="OPENAI_MODEL")
+    llm_request_timeout_seconds: float = Field(default=25, ge=0.05, le=120)
+    llm_max_retries: int = Field(default=1, ge=0, le=2)
+    llm_max_output_tokens: int = Field(default=1600, ge=256, le=4000)
+    llm_max_tool_calls: int = Field(default=6, ge=1, le=6)
+    llm_tool_timeout_seconds: float = Field(default=15, ge=0.01, le=60)
+    llm_max_evidence_rows: int = Field(default=10, ge=1, le=20)
+    llm_max_evidence_bytes: int = Field(default=12000, ge=1000, le=32000)
+    llm_total_evidence_bytes: int = Field(default=48000, ge=2000, le=128000)
 
     @field_validator("cors_origins")
     @classmethod
