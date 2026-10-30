@@ -1,1 +1,1 @@
-"""Approved read-only analytics tools and provider-independent dispatch."""
+"""Approved read-only analytics, document retrieval, and provider-independent dispatch."""

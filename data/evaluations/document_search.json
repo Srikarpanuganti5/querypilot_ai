@@ -1,0 +1,22 @@
+[
+  {"id":"returns-window","query":"What is the return window for products?","relevant_document_ids":["QP-RET-001"]},
+  {"id":"refund-amount","query":"Can a refund exceed the original successful payment?","relevant_document_ids":["QP-RET-001"]},
+  {"id":"standard-shipping","query":"How many business days does standard delivery take after dispatch?","relevant_document_ids":["QP-SHP-002"]},
+  {"id":"shipment-tracking","query":"Does the database contain shipment tracking numbers or delivery timestamps?","relevant_document_ids":["QP-SHP-002"]},
+  {"id":"failed-payments","query":"How are failed payments handled before a successful retry?","relevant_document_ids":["QP-PAY-003"]},
+  {"id":"payment-methods","query":"Which payment methods are supported for successful settlement?","relevant_document_ids":["QP-PAY-003"]},
+  {"id":"cancel-pending","query":"When can customers cancel an order?","relevant_document_ids":["QP-CAN-004"]},
+  {"id":"cancel-paid","query":"Can a completed order be changed to cancelled after payment?","relevant_document_ids":["QP-CAN-004"]},
+  {"id":"catalog-categories","query":"What are the five approved product catalog categories?","relevant_document_ids":["QP-CAT-005"]},
+  {"id":"catalog-price","query":"Should product revenue use the current catalog price or historical unit price?","relevant_document_ids":["QP-CAT-005"]},
+  {"id":"support-case","query":"How do I open a support case and what is the response target?","relevant_document_ids":["QP-SUP-006"]},
+  {"id":"support-escalation","query":"How does support escalate a disputed refund case?","relevant_document_ids":["QP-SUP-006"]},
+  {"id":"discount-rates","query":"What discount percentages can promotions apply and can they stack?","relevant_document_ids":["QP-DSC-007"]},
+  {"id":"discount-rounding","query":"How is promotional unit pricing rounded to cents?","relevant_document_ids":["QP-DSC-007"]},
+  {"id":"fraud-signals","query":"Do repeated failed attempts prove fraud or require manual review?","relevant_document_ids":["QP-FRD-008"]},
+  {"id":"fraud-data","query":"Are fraud scores device fingerprints or IP addresses stored?","relevant_document_ids":["QP-FRD-008"]},
+  {"id":"stock-snapshot","query":"Does stock quantity represent units sold or a current inventory snapshot?","relevant_document_ids":["QP-INV-009"]},
+  {"id":"reorder-threshold","query":"When does the warehouse review products for replenishment?","relevant_document_ids":["QP-INV-009"]},
+  {"id":"reference-window","query":"Why can a reproducible twelve month dataset span thirteen calendar month buckets?","relevant_document_ids":["QP-FAQ-010"]},
+  {"id":"application-limits","query":"Can this application answer live merchant questions or generate an AI answer?","relevant_document_ids":["QP-FAQ-010"]}
+]

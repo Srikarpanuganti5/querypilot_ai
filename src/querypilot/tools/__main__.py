@@ -1,4 +1,4 @@
-"""Developer demo: python -m querypilot.tools get_top_products --arguments '{"limit":5}'."""
+"""Call an approved SQL or document tool using --arguments with a JSON object."""
 
 import argparse
 import json
@@ -45,7 +45,7 @@ def main() -> None:
                 duration_ms=0,
                 error=ToolError(
                     code="configuration_error",
-                    message="Set valid settings and restricted READER_DATABASE_URL.",
+                    message="Check local tool configuration; SQL requires READER_DATABASE_URL.",
                 ),
             ).model_dump_json()
         )

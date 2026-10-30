@@ -1,4 +1,4 @@
-"""Five approved analytics tools; independent of HTTP and any LLM provider."""
+"""Approved analytics and document search; independent of HTTP and LLM providers."""
 
 import logging
 import time
@@ -24,6 +24,8 @@ from querypilot.schemas.analytics import (
     TopProductsInput,
     TopProductsOutput,
 )
+from querypilot.schemas.documents import DocumentSearchInput, DocumentSearchOutput
+from querypilot.services.document_search import DocumentError, DocumentIndex
 
 logger = logging.getLogger("querypilot.tools")
 
@@ -36,6 +38,11 @@ class ToolDefinition:
 
 
 _TOOLS = {
+    "search_business_documents": ToolDefinition(
+        DocumentSearchInput,
+        DocumentSearchOutput,
+        "Retrieve untrusted synthetic business passages with citations",
+    ),
     "get_top_products": ToolDefinition(
         TopProductsInput, TopProductsOutput, "Completed-order product revenue"
     ),
@@ -55,8 +62,16 @@ _TOOLS = {
 
 
 class ToolRegistry:
-    def __init__(self, repository: AnalyticsRepository):
+    def __init__(
+        self,
+        repository: AnalyticsRepository | None = None,
+        *,
+        document_index: DocumentIndex | None = None,
+        settings: Settings | None = None,
+    ):
         self._repository = repository
+        self._document_index = document_index
+        self._settings = settings
 
     def definitions(self) -> dict[str, dict[str, Any]]:
         return {
@@ -74,7 +89,7 @@ class ToolRegistry:
         data, error = None, None
         try:
             if known_name is None:
-                error = ToolError(code="unknown_tool", message="Unknown analytics tool.")
+                error = ToolError(code="unknown_tool", message="Unknown tool.")
             else:
                 definition = _TOOLS[known_name]
                 try:
@@ -86,15 +101,39 @@ class ToolRegistry:
                         code="invalid_arguments", message="Arguments do not match the tool schema."
                     )
                 else:
-                    rows, truncated = self._repository.execute(known_name, validated)
+                    if known_name == "search_business_documents":
+                        if self._document_index is None:
+                            config = self._settings if self._settings is not None else Settings()
+                            self._document_index = DocumentIndex.from_directory(
+                                config.documents_path
+                            )
+                        output = self._document_index.search(validated).model_dump()
+                    else:
+                        if self._repository is None:
+                            config = self._settings if self._settings is not None else Settings()
+                            try:
+                                self._repository = AnalyticsRepository(
+                                    create_database(config, reader=True),
+                                    config.db_statement_timeout_ms,
+                                )
+                            except DatabaseError:
+                                raise _ConfigurationError from None
+                        rows, truncated = self._repository.execute(known_name, validated)
+                        output = {"rows": rows, "truncated": truncated}
                     try:
-                        data = definition.output_schema.model_validate(
-                            {"rows": rows, "truncated": truncated}
-                        )
+                        data = definition.output_schema.model_validate(output)
                     except ValidationError:
                         error = ToolError(
-                            code="invalid_output", message="Analytics result failed validation."
+                            code="invalid_output", message="Tool result failed validation."
                         )
+        except _ConfigurationError:
+            error = ToolError(
+                code="configuration_error", message="Configure restricted READER_DATABASE_URL."
+            )
+        except DocumentError:
+            error = ToolError(
+                code="document_error", message="Business document collection unavailable."
+            )
         except UnsafeDatabaseError:
             error = ToolError(
                 code="unsafe_database", message="Database role is not a restricted reader."
@@ -108,7 +147,7 @@ class ToolRegistry:
                 else "Analytics database unavailable.",
             )
         except Exception:
-            error = ToolError(code="internal_error", message="Analytics execution failed.")
+            error = ToolError(code="internal_error", message="Tool execution failed.")
         duration = int((time.monotonic() - started) * 1000)
         status = "success" if error is None else "error"
         logger.info(
@@ -124,12 +163,15 @@ class ToolRegistry:
         )
 
     def close(self) -> None:
-        self._repository.close()
+        if self._repository is not None:
+            self._repository.close()
+
+
+class _ConfigurationError(Exception):
+    pass
 
 
 def create_registry(settings: Settings | None = None) -> ToolRegistry:
     config = settings if settings is not None else Settings()
-    # Missing reader settings fail explicitly; writer credentials are never consulted.
-    return ToolRegistry(
-        AnalyticsRepository(create_database(config, reader=True), config.db_statement_timeout_ms)
-    )
+    # Search needs no database. Reader credentials are required lazily for SQL calls only.
+    return ToolRegistry(settings=config)

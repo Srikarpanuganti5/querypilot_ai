@@ -81,7 +81,7 @@ def test_defaults_and_allowlist() -> None:
     args = TopProductsInput(start_date="2026-01-01")
     assert args.start_date == date(2026, 1, 1)
     names = ToolRegistry(Mock()).definitions()
-    assert len(names) == 5
+    assert len(names) == 6
     assert "get_customer_order_summary" in names
     assert all(not item["input_schema"]["additionalProperties"] for item in names.values())
 
@@ -137,14 +137,17 @@ def test_customer_output_rejects_personal_fields() -> None:
 
 
 def test_reader_configuration_is_mandatory() -> None:
-    with pytest.raises(DatabaseError, match="READER_DATABASE_URL"):
-        create_registry(
-            Settings(
-                _env_file=None,
-                database_url="postgresql+psycopg://writer@localhost/db",
-                reader_database_url=None,
-            )
+    registry = create_registry(
+        Settings(
+            _env_file=None,
+            database_url="postgresql+psycopg://writer@localhost/db",
+            reader_database_url=None,
         )
+    )
+    result = registry.execute("get_top_products", {})
+    assert result.error.code == "configuration_error"
+    assert result.data is None
+    registry.close()
 
 
 def test_structured_logs_do_not_contain_arguments(capsys: pytest.CaptureFixture[str]) -> None:

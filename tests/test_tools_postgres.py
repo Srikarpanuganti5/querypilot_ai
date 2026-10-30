@@ -236,7 +236,9 @@ def test_payment_attempts_and_dates(populated: tuple) -> None:
 
 
 def test_empty_database_all_tools(stores: tuple) -> None:
-    for name in stores[0].definitions():
+    sql_names = [name for name in stores[0].definitions() if name != "search_business_documents"]
+    assert len(sql_names) == 5
+    for name in sql_names:
         result = stores[0].execute(name, {})
         assert result.status == "success", result.error
         assert result.data.rows == []

@@ -6,12 +6,15 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from querypilot.schemas.documents import DocumentSearchOutput
+
 ToolName = Literal[
     "get_top_products",
     "get_revenue_summary",
     "get_refund_analytics",
     "get_customer_order_summary",
     "get_payment_status_summary",
+    "search_business_documents",
 ]
 Money = Annotated[Decimal, Field(ge=0, decimal_places=2)]
 
@@ -135,8 +138,13 @@ class PaymentOutput(Output):
     rows: list[PaymentRow] = Field(max_length=2)
 
 
-AnalyticsOutput = Annotated[
-    TopProductsOutput | RevenueOutput | RefundOutput | CustomerOutput | PaymentOutput,
+ToolOutput = Annotated[
+    TopProductsOutput
+    | RevenueOutput
+    | RefundOutput
+    | CustomerOutput
+    | PaymentOutput
+    | DocumentSearchOutput,
     Field(discriminator="operation"),
 ]
 
@@ -151,6 +159,7 @@ class ToolError(Contract):
         "database_error",
         "invalid_output",
         "internal_error",
+        "document_error",
     ]
     message: str
 
@@ -158,7 +167,7 @@ class ToolError(Contract):
 class ToolResult(Contract):
     tool: ToolName | None
     status: Literal["success", "error"]
-    data: AnalyticsOutput | None = None
+    data: ToolOutput | None = None
     error: ToolError | None = None
     duration_ms: int = Field(ge=0)
 

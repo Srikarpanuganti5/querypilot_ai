@@ -1,1 +1,1 @@
-"""Public API response and error schemas."""
+"""Public API and tool contracts for analytics and cited document passages."""
