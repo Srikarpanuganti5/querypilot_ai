@@ -1,6 +1,7 @@
 """Environment settings; constructing the app never contacts external services."""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
@@ -27,6 +28,7 @@ class Settings(BaseSettings):
     db_max_overflow: int = Field(default=5, ge=0, le=20)
     db_pool_timeout: int = Field(default=5, ge=1, le=30)
     db_statement_timeout_ms: int = Field(default=5000, ge=100, le=30000)
+    documents_path: Path = Path("data/documents")
 
     @field_validator("cors_origins")
     @classmethod

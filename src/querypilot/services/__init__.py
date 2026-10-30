@@ -1,1 +1,1 @@
-"""Future business services independent of HTTP details."""
+"""Business services, including bounded local document ingestion and retrieval."""
