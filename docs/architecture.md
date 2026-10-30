@@ -1,12 +1,47 @@
 # Architecture
 
-## Current state: Day 4
+## Current state: Day 5
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
 and sanitized exception handling. Day 3 adds PostgreSQL infrastructure invoked explicitly
 by migration, seed, and verification commands. API initialization remains database-free.
 There is no LLM integration, chat endpoint, frontend, full application deployment, or CI.
+
+## Document ingestion and retrieval
+
+```mermaid
+flowchart LR
+    A[Approved local Markdown] --> B[Safe file loader]
+    B --> C[Validated metadata and bounded sections]
+    C --> D[BM25 index]
+    E[search_business_documents] --> F[Validated query/category/top-k]
+    F --> D
+    D --> G[Untrusted passages and citation IDs]
+```
+
+`services/document_search.py` loads immediate Markdown files from the approved directory,
+validates IDs/metadata, chunks sections and builds an in-memory BM25 index. It bounds
+files/collections, uses descriptor-relative no-follow opening and regular-file checks,
+and accepts no path from tool callers. Ancestor directories are trusted operator
+infrastructure; safe loading requires POSIX support and fails closed otherwise.
+Missing/invalid collections give sanitized errors; empty collections give empty results.
+
+`schemas/documents.py` adds typed search arguments and passage results. The shared
+envelope now supports six operations. Registry SQL and document resources initialize
+independently on first use. Search does not create a database engine; SQL calls still
+require restricted reader configuration and preserve every role/transaction check.
+
+Ranking uses normalized lexical tokens, fixed BM25 parameters, category filtering and
+citation tie-breaking. No model, embeddings or external service is used. Indexes are
+registry-local snapshots; recreate them after edits. Citations identify document/section/
+part in that snapshot, not immutable versions across edits. Text is never executed and
+query/passage content is excluded from execution logs. See [document_search.md](document_search.md).
+
+`services/evaluate_search.py` runs registry searches over 20 authored questions with
+expected relevant document IDs and measures Hit Rate@5 and first-passage MRR@5. The
+results in progress.md describe a small regression set, not general semantic accuracy
+or future-model prompt-injection resistance.
 
 ## Analytics tools and execution flow
 
@@ -19,8 +54,8 @@ flowchart LR
     E --> F[Structured results]
 ```
 
-`schemas/analytics.py` defines five input schemas, typed per-operation output schemas,
-and a consistent success/error envelope. `tools/registry.py` exposes a fixed allowlist,
+`schemas/analytics.py` defines five analytics contracts and the shared result envelope;
+`schemas/documents.py` adds the sixth operation. `tools/registry.py` exposes a fixed allowlist,
 schemas/descriptions, validation and dispatch, without an LLM-specific format or dynamic
 registration. `tools/__main__.py` is a developer CLI; no HTTP endpoint was added.
 
@@ -30,7 +65,7 @@ select only approved fields, with explicit SQL/fetch bounds. Revenue uses comple
 payments and refunds use their own dates/accounting semantics, avoiding multiplied sums.
 See [tools.md](tools.md) for exact rules, per-category count semantics and truncation.
 
-Every tool execution uses the separately configured reader engine, a read-only transaction,
+Every SQL tool execution uses the separately configured reader engine, a read-only transaction,
 and a local statement timeout. Before selecting analytics data, a role audit rejects
 elevated flags/memberships, role switching, table ownership, DML privileges, database
 CREATE/TEMP and schema CREATE, and requires SELECT on all six tables. No writer URL

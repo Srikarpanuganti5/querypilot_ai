@@ -6,10 +6,10 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 4 read-only analytics tools.** The six-table PostgreSQL schema, Alembic
-migrations, reproducible synthetic data, explicit sessions, and developer verification
-are implemented alongside five approved analytics tools and the FastAPI foundation. Chat, LLM integration, and the UI
-are not implemented. API health/docs/tests still work without a database or API key.
+**Current status: Day 5 document search.** FastAPI, PostgreSQL migrations, synthetic data,
+five read-only analytics tools, and local document retrieval are implemented. The registry
+has six approved tools. Chat, LLM integration, and the UI are not implemented. Search
+and API health/docs work without a database or API key.
 
 ## Planned features
 
@@ -177,7 +177,7 @@ The [developer SQL examples](data/sample/analytics.sql) include monthly revenue,
 products, refunds by category, customer order counts, and failed payments. Run them with
 `psql -v ON_ERROR_STOP=1 -f data/sample/analytics.sql` using local PG authentication settings.
 They are not exposed as agent tools. Configure the separate SELECT-only reader role using
-[reader-role instructions](docs/database.md#read-only-role-provisioning) before Day 4.
+[reader-role instructions](docs/database.md#read-only-role-provisioning) for SQL tools.
 
 ```sh
 # Independent tests, including existing API checks:
@@ -226,6 +226,42 @@ current completed orders, excluding fully refunded orders; payment settlement an
 dates follow separate rules. Read the [tool contracts and security guide](docs/tools.md)
 before interpreting these aggregates. FastAPI still requires no database at startup.
 
+## Local document search
+
+`search_business_documents` retrieves actual passages from **10 synthetic documents / 40
+chunks** using deterministic BM25. Results contain document ID/title/category, section,
+excerpt, score and citation. It does not generate answers or execute retrieved instructions.
+No embeddings, search service, model API or new dependency is involved.
+
+```sh
+python -m querypilot.tools search_business_documents --arguments '{"query":"What is the return window for products?","top_k":1}'
+python -m querypilot.tools search_business_documents --arguments '{"query":"How are failed payments handled?","top_k":1}'
+python -m querypilot.tools search_business_documents --arguments '{"query":"When can customers cancel an order?","top_k":1}'
+python -m querypilot.services.evaluate_search
+```
+
+Categories: `refunds`, `shipping`, `payments`, `cancellations`, `products`, `support`,
+`discounts`, `fraud`, `inventory`, `faq`. Query strings are capped at 500 characters;
+`top_k` defaults to 5 and is capped at 10. A category filter is optional.
+
+Example: “Customers may request a return within 30 calendar days of delivery.”
+Citation: `QP-RET-001#s002-c001`. Failed-payment and cancellation passages cite
+`QP-PAY-003#s002-c001` and `QP-CAN-004#s002-c001` respectively.
+
+Run from the repository root. `QUERYPILOT_DOCUMENTS_PATH` selects the trusted corpus
+(default `data/documents`); tool arguments cannot select paths. Safe ingestion rejects
+symlinks/unsupported files and bounds file/chunk sizes. Every result marks passages as
+untrusted. See [the search guide](docs/document_search.md) for platform/trust boundaries.
+
+The index is built lazily and cached per registry. Recreate the registry after edits.
+Search needs no database settings; SQL tools still require READER_DATABASE_URL with no
+writer fallback. All five existing analytics operations remain available.
+
+Run `pytest -q -m 'not postgres'` for search and independent tests; configure writer/reader
+test URLs for the full PostgreSQL suite. The authored 20-question set measured **Hit
+Rate@5 = 1.0 and MRR@5 = 1.0**. This is a curated regression set, not a held-out benchmark
+or a guarantee for arbitrary questions.
+
 ## Development roadmap
 
 Day 1 establishes the foundation. Day 2 adds FastAPI and health; Day 3 introduces
@@ -242,8 +278,9 @@ See [PLANS.md](PLANS.md) for the detailed proposed sequence.
 - [docs/architecture.md](docs/architecture.md): planned components and dependencies.
 - [docs/database.md](docs/database.md): PostgreSQL setup, ER diagram, accounting and reader access.
 - [docs/tools.md](docs/tools.md): approved analytics contracts, security model, CLI and tests.
+- [docs/document_search.md](docs/document_search.md): corpus, categories, safe ingestion and evaluation.
 - [docs/progress.md](docs/progress.md): implementation and verification status.
-- [data/sample/](data/sample/README.md): fixture policy; dataset planned for Day 3.
+- [data/sample/](data/sample/README.md): synthetic fixture policy and developer SQL.
 
 ## Security principles
 

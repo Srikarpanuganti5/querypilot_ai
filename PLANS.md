@@ -1,9 +1,8 @@
 # Development roadmap
 
-Days 1–3 are implemented and pushed. Day 4 adds the approved analytics registry and
-restricted PostgreSQL execution; verification results are recorded in docs/progress.md.
-Docker container startup remains pending because the daemon is unavailable. Day 4 changes
-have explicit commit/push approval from the user's follow-up. Day 5 and later milestones need a new request.
+Days 1–4 are implemented and pushed. Day 5 adds local document ingestion, BM25 search,
+citations and measured evaluation. See docs/progress.md for actual verification.
+The user has approved focused Day 5 commits and a push. Day 6 and later need a separate request.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -13,7 +12,7 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 2 | FastAPI, `/health`, `/api/v1/info`, config, errors, logging, CORS | 24 tests and local HTTP checks passed |
 | 3 | Six-table schema, Alembic, synthetic data, verifier, PostgreSQL-only Compose | Native PostgreSQL migration/seed/accounting and regression tests; see progress |
 | 4 | Five validated analytics operations, registry, CLI, reader role audit and timeouts | Accounting, rejection, privacy, bounds, actual PostgreSQL permission/timeout tests |
-| 5 | Document search and sources | Relevant retrieval and bounded excerpts |
+| 5 | Ten policies, safe ingestion, BM25, sixth tool and citations | Filesystem/retrieval tests, 20-question metrics, SQL/API regressions |
 | 6 | OpenAI integration and tool schemas | Mocked protocol tests; opt-in live checks |
 | 7 | Multi-step orchestration and traces | Loop bounds and evidence propagation |
 | 8 | Validation, errors, timeouts, logging | Failure-path and security tests |
@@ -61,8 +60,19 @@ now explicitly approved committing and pushing Day 3.
 
 The user has approved committing and pushing Day 4. Keep these as focused commits.
 
-## Day 5 preparation
+## Day 5 review groups
 
-After a separate request, add document search over synthetic business documents with
-bounded excerpts and source identifiers. Treat retrieved text as untrusted. No document
-search, LLM/provider integration, or UI is included in Day 4.
+1. Corpus/ingestion: ten policies, literal metadata, bounded sections, safe local loading,
+   BM25 index and typed search schemas.
+2. Registry/evaluation/tests: sixth operation, lazy resources, CLI, 20-question relevance
+   set, measured metrics and safety/regression tests.
+3. Documentation: categories, accounting consistency, filesystem trust, index lifecycle,
+   evaluation limits, architecture and actual progress.
+
+The user has now approved committing and pushing Day 5. Keep the commit groups focused.
+
+## Day 6 preparation
+
+After a separate request, integrate OpenAI function calling with the provider-neutral
+registry and schemas. Preserve SQL privilege checks and treat passages as untrusted
+evidence. Add mocked protocol tests. No model API code is included in Day 5.

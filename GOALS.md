@@ -20,7 +20,8 @@ documentation, environment configuration, JSON logging, CORS, and error handling
 Day 3 adds the PostgreSQL schema, migrations, explicit database transactions, a synthetic
 dataset, developer queries, and verification. API startup and health remain independent
 of the database. Day 4 adds five approved read-only analytics tools and a provider-neutral
-registry. LLM integration, chat, document search, and the UI remain planned.
+registry. Day 5 adds local BM25 retrieval with citations as the sixth approved tool.
+LLM integration, chat, and the UI remain planned.
 
 ## Quality and security
 
@@ -72,3 +73,15 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Actual PostgreSQL integration tests for accounting, permissions, cancellation and recovery.
 - Existing Day 1–3 behavior retained; documentation and real demonstrations recorded.
 - No LLM, function calling, chat, or UI. Wait for commit approval and stop before Day 5.
+
+## Day 5 acceptance criteria
+
+- Ten synthetic Markdown policies with IDs, titles, categories and section headings.
+- Safe bounded local ingestion, deterministic BM25 passage search and source citations.
+- Sixth registry tool `search_business_documents`, independent of PostgreSQL.
+- Validated query/category/top-k, sanitized errors/logs, untrusted-content handling.
+- At least 15 relevance questions with measured Hit Rate@5 and MRR@5.
+- CLI demonstrations, filesystem/retrieval tests and SQL/API regression checks.
+- Updated architecture/setup/progress documentation with actual results and limits.
+- No AI answers, embeddings, external search, model API, agent loop or frontend.
+- Prepare focused changes, wait for commit approval, and stop before Day 6.

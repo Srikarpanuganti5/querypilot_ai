@@ -363,3 +363,144 @@ restricted-role or analytics verification blocker remains.
 
 Day 5, after a separate request: bounded document search over synthetic business documents,
 source identifiers, retrieval tests, and untrusted-content handling. No Day 5 code has begun.
+
+## Day 5 — document search and citations (2026-10-29)
+
+Status: implemented and verified, including existing PostgreSQL analytics regressions.
+No model API, embeddings, agent loop, extra database, new HTTP endpoint or frontend was
+added. The user has now explicitly approved committing and pushing Day 5 in focused groups.
+Focused review groups are recorded in PLANS.md. Days 1–4 were already pushed at start.
+
+### Files and implementation
+
+- Added ten Markdown policies in `data/documents/`, each with unique ID/title/category,
+  actual content and section headings. The fictional company is QueryPilot Demo Store.
+- Added `schemas/documents.py` and `services/document_search.py`: typed inputs/results,
+  literal metadata parsing, bounded safe ingestion, section chunks and deterministic BM25.
+- Added `data/evaluations/document_search.json` and `services/evaluate_search.py`:
+  20 relevance questions, actual registry execution, Hit Rate@5 and MRR@5 calculation.
+- Added `tests/test_document_search.py`: 35 new cases covering retrieval, provenance,
+  bounds, missing/empty/malformed collections, determinism, filesystem safety, independent
+  resources, untrusted instructions, safe logs and metric correctness.
+- Extended the shared result union and allowlist, registry, CLI, Settings and `.env.example`
+  for the sixth tool and trusted `QUERYPILOT_DOCUMENTS_PATH` configuration.
+- Updated two Day 4 test modules: the allowlist is now six; SQL configuration is checked
+  at execution instead of factory construction; empty-SQL checks still cover all five
+  SQL tools separately from the new passage output. SQL query/security code is unchanged.
+- Updated package docstrings, README, goals/plans/instructions, architecture/analytics
+  guides and added `docs/document_search.md`. No dependency or lockfile changes.
+
+`search_business_documents` accepts a required nonblank query capped at 500 raw characters,
+strict top_k=1..10 (default 5), and an optional approved category. No tool argument can
+select a filename or directory. Search returns original section text with citations,
+score and explicit untrusted-content classification; it does not synthesize an answer.
+
+### Actual collection and evaluation
+
+The actual index contains **10 documents and 40 chunks**. The ten categories cover refunds,
+shipping, payments, cancellations, products, support, discounts, fraud, inventory and FAQ.
+The policies preserve Day 3 accounting: completed-only revenue, full refunds against
+successful payments, historical discounted unit prices, and stock as a snapshot. Shipping,
+support and fraud workflows are explicitly fictional examples without invented DB events.
+
+The evaluation uses 20 fixed questions with expected relevant document IDs. Actual output:
+
+```json
+{
+  "questions": 20,
+  "indexed_documents": 10,
+  "indexed_chunks": 40,
+  "hit_rate_at_5": 1.0,
+  "mrr_at_5": 1.0
+}
+```
+
+All 20 expected document IDs appeared at passage rank 1. This is a small authored
+regression set, not a held-out benchmark, general semantic accuracy claim or future-model
+injection-resistance measure. The evaluator prints actual per-question ranks/IDs and
+checks expected IDs exist. Repeated chunks from one document occupy real rank positions.
+
+### Commands and real results
+
+Git was clean (`main...origin/main`) before edits. No installation was needed because
+the existing editable environment and standard library supply all dependencies.
+
+| Command/check | Actual outcome |
+| --- | --- |
+| Existing independent tests after initial registry integration | 74 passed. |
+| First search/evaluation test run | 105 independent cases passed; 20-question metrics both 1.0. |
+| Additional raw-query/collection bounds and SQL-isolation tests | Independent suite increased to 109 passing cases. |
+| Full suite with TEST_DATABASE_URL and TEST_READER_DATABASE_URL (final) | **141 passed**, 1 existing dependency warning, in 5.26s. Includes 32 real PostgreSQL cases. |
+| Full pytest without database variables | **109 passed, 32 skipped**, 1 warning, in 0.52s. |
+| `pytest -q -m 'not postgres'` | **109 passed, 32 deselected** in 0.44s. |
+| `python -m querypilot.services.evaluate_search` | 10 documents, 40 chunks, 20 questions; Hit Rate@5=1.0, MRR@5=1.0. |
+| CLI demonstrations for return window, failed payments and cancellations | All exit 0, actual passages/citations below; no database needed. |
+| `ruff check .` | Passed. |
+| `ruff format --check .` | Passed; 59 files already formatted. |
+| `git diff --check` | Passed. |
+| Offline `uv lock --check` | Passed; 34 resolved packages, unchanged dependencies. |
+| PostgreSQL readiness (approved outside-sandbox check) | Existing local server accepting connections on port 55432. |
+| Docker info | Failed: daemon socket unavailable; container runtime remains unverified. |
+| API TestClient checks without DATABASE_URL | Health, info, docs, redoc and OpenAPI all returned 200. |
+| API composition/routes, SQL builders/audit, models/migrations and dependency diffs | Empty; retained unchanged. |
+| Tracked/pending files and recognized-secret-pattern review | No `.env`/`.venv` files or recognized API/GitHub/private-key patterns found. Targeted review, not an exhaustive secret audit. |
+
+Final PostgreSQL regression command used the existing isolated local database and reader:
+
+```sh
+# Configure both URLs securely in the environment first:
+TEST_DATABASE_URL=... TEST_READER_DATABASE_URL=... .venv/bin/python -m pytest -q
+```
+
+No existing business rows were changed by search. PostgreSQL tests continued to use their
+isolated temporary schemas and verify all five SQL operations and privilege/timeout rules.
+
+### Actual demonstrations
+
+Commands were run through the existing developer CLI:
+
+```sh
+python -m querypilot.tools search_business_documents --arguments '{"query":"What is the return window for products?","top_k":3}'
+python -m querypilot.tools search_business_documents --arguments '{"query":"How are failed payments handled?","top_k":1}'
+python -m querypilot.tools search_business_documents --arguments '{"query":"When can customers cancel an order?","top_k":1}'
+```
+
+The top returned passages/citations were:
+
+- `QP-RET-001#s002-c001`, Product return window: customers may request a return within
+  30 calendar days of delivery; unused products must be complete and in original packaging.
+- `QP-PAY-003#s002-c001`, Failed payments and retries: failed attempts collect no money,
+  remain excluded from revenue, and retries do not duplicate orders or line revenue.
+- `QP-CAN-004#s002-c001`, When customers can cancel: pending orders without successful
+  payment may be considered for cancellation; search itself cannot cancel orders.
+
+These are quotations/paraphrases of indexed policy sections, not generated AI answers.
+
+### Security, limitations and problems encountered
+
+Descriptor-relative no-follow loading rejects leaf symlinks and a symlink root; regular-file,
+hard-link, size, UTF-8 and collection checks bound ingestion. Tests cover unsupported files,
+path-shaped arguments, duplicate IDs, missing/empty collections, long sections, deterministic
+ties, valid citations, category filters, irrelevant queries, result/query caps, and malformed
+inputs rejected before I/O. A mocked forbidden database initializer proves search never
+creates a database; a missing document collection does not disable SQL dispatch.
+
+Command-like injected text was retrieved only as untrusted content; no sentinel file was
+created. Execution logs excluded both query text and document content. No claim is made
+that a future LLM cannot follow malicious text; Day 6 must preserve the data boundary.
+
+Initial Ruff checks caught a long stopword line and a long test fixture string; both were
+corrected before the final passing checks. No pytest failures occurred during Day 5.
+The existing FastAPI/Starlette HTTPX deprecation warning remains nonfatal.
+
+The safe loader requires POSIX descriptor-relative/no-follow support. Root configuration
+and ancestor directories are trusted operator infrastructure. Corpus files are not bundled
+into the wheel; deployments must supply them. Indexes are per-registry snapshots, with
+citations tied to their section ordinals; recreate a registry after edits. Retrieval is
+lexical English BM25, without stemming/synonyms or semantic guarantees. Duplicate passages
+from a document may share the top results. Docker runtime is still unavailable, but the
+actual PostgreSQL regression suite passed. No unresolved Day 5 verification blocker remains.
+
+Day 6, after a separate request: OpenAI function calling using the existing provider-neutral
+schemas/registry, mocked protocol tests, and strict treatment of passages as untrusted
+evidence. No OpenAI SDK/API calls or agent loops were implemented on Day 5.

@@ -2,8 +2,8 @@
 
 ## Milestone discipline
 
-Days 1–3 established the package, FastAPI, and database foundation. Day 4 adds approved
-read-only analytics tools without LLM integration or new API endpoints.
+Days 1–4 established the package, API, database, and read-only analytics foundation.
+Day 5 adds local document retrieval and citations without LLM integration or new endpoints.
 Read GOALS.md, PLANS.md,
 docs/architecture.md, and docs/progress.md before changing scope. Stop after the
 requested milestone; later milestones require a new request. User instructions
@@ -63,4 +63,8 @@ schema/migrations, synthetic data/verification/tests, and setup/documentation.
 
 The Day 4 attachment initially required commit/push approval. The user has now explicitly
 approved pushing Day 4. Use focused commits for analytics contracts/queries,
-registry/security tests, and documentation. Do not begin Day 5 or integrate an LLM or frontend.
+registry/security tests, and documentation. Day 4 excluded LLM integration and the frontend.
+
+The Day 5 request initially required commit/push approval. The user has now explicitly
+approved the GitHub workflow for Day 5. Use focused corpus/ingestion,
+registry/evaluation/tests, and documentation commits. Stop before Day 6 and model API integration.

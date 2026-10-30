@@ -33,8 +33,11 @@ QUERYPILOT_DB_STATEMENT_TIMEOUT_MS=5000
 
 Percent-encode special characters in URL credentials. The existing `READER_DATABASE_URL`
 is the equivalent of a dedicated agent database URL. `DATABASE_URL` is never consulted
-as a fallback. Missing reader configuration raises a safe configuration error. Engine
-creation is lazy; importing the package or starting FastAPI does not contact PostgreSQL.
+as a fallback. Missing reader configuration produces configuration_error when an SQL
+tool is called. Since Day 5, registry creation and document search need no database
+configuration; the SQL repository initializes on the first SQL operation. Importing
+packages or starting FastAPI does not contact PostgreSQL. See [document search](document_search.md)
+for the sixth tool, with separate result fields and no SQL execution.
 
 Each execution sets `SET TRANSACTION READ ONLY`, applies a transaction-local server-side
 statement timeout, and checks the authenticated/current role. Elevated flags, role
@@ -125,7 +128,7 @@ and typed `rows`. An error has a stable code and safe message, with no data. Unk
 operation names return `tool: null` rather than echoing untrusted text. `definitions()`
 returns descriptions and input/output JSON schemas; it does not register provider tools.
 
-Possible error codes: unknown_tool, invalid_arguments, configuration_error (CLI setup),
+Possible error codes: unknown_tool, invalid_arguments, configuration_error (SQL or CLI setup),
 unsafe_database, timeout, database_error, invalid_output, internal_error. Driver errors,
 SQL strings, URLs, raw arguments, and validation input values are excluded from results.
 JSON application logs include approved tool name (or `unknown`), status, and elapsed time.
