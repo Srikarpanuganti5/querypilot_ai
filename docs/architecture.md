@@ -1,12 +1,50 @@
 # Architecture
 
-## Current state: Day 5
+## Current state: Day 6
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
 and sanitized exception handling. Day 3 adds PostgreSQL infrastructure invoked explicitly
 by migration, seed, and verification commands. API initialization remains database-free.
-There is no LLM integration, chat endpoint, frontend, full application deployment, or CI.
+The direct OpenAI adapter and single-round service are implemented with mock/protocol
+verification; actual API verification is pending. No autonomous agent loop, chat endpoint,
+frontend, full deployment or CI is present.
+
+## Single-round model/tool service
+
+```mermaid
+flowchart LR
+    A[Validated question] --> B[Responses selection request]
+    B --> C[Validate one bounded call batch]
+    C --> D[Existing six-tool registry]
+    D --> E[Bound structured evidence and preserve call IDs]
+    E --> F[One answer request with tools disabled]
+    F --> G[Check references and numeric literals]
+    G --> H[Outcome with evidence traces]
+```
+
+`agent/provider.py` wraps AsyncOpenAI, using explicit key/model settings, bounded transient
+retries, a logical request deadline and safe typed provider errors. No client is constructed
+at package import. `agent/tool_schemas.py` derives strict, nullable-optional schemas from
+registry definitions and normalizes null defaults back to existing Pydantic behavior.
+
+`agent/orchestrator.py` performs at most two logical model requests. All first-response
+output items, including encrypted reasoning, are replayed with call_id-matched function
+outputs and store=false. It does not expose those provider objects in public traces.
+The second request disables tools; any additional call is rejected without execution.
+No-call/no-evidence responses return explicit uncertainty and skip synthesis.
+
+`agent/evidence.py` trims complete records under row and UTF-8 packet budgets; it never
+cuts JSON mid-record. Document citations come only from forwarded passages. Final answers
+need valid evidence IDs, exact associated source citations and supported numeric literals.
+These are mechanical checks, not semantic entailment or a grounding guarantee.
+
+`schemas/llm.py` exposes safe outcomes/evidence traces. The tools CLI's `ask` command
+selects explicit mock/live mode. Mock mode uses deterministic provider fixtures with the
+real registry; live errors never switch modes. Synchronous tools execute off the event
+loop, with an await deadline and skip-on-timeout behavior. Worker threads are not forcibly
+terminated; database-side timeouts still matter. See [llm.md](llm.md) for exact limits,
+protocol references, grounding limitations and current live-verification status.
 
 ## Document ingestion and retrieval
 

@@ -504,3 +504,137 @@ actual PostgreSQL regression suite passed. No unresolved Day 5 verification bloc
 Day 6, after a separate request: OpenAI function calling using the existing provider-neutral
 schemas/registry, mocked protocol tests, and strict treatment of passages as untrusted
 evidence. No OpenAI SDK/API calls or agent loops were implemented on Day 5.
+
+## Day 6 — OpenAI function calling, single round (2026-10-30)
+
+Implementation and mock/protocol verification are complete. **Actual live OpenAI
+verification is pending**: OPENAI_API_KEY and OPENAI_MODEL were both unconfigured, and
+no paid live usage was authorized or performed. No live-operational claim is made.
+The user has now approved committing and pushing Day 6 in five meaningful groups:
+provider/configuration, contracts/evidence, orchestration/CLI, tests, and documentation.
+
+### Files and scope
+
+- Added `agent/provider.py`: official AsyncOpenAI Responses adapter, required environment
+  key/model, bounded SDK retries/deadline and safe auth/rate/network/response errors.
+- Added `agent/tool_schemas.py`: strict schemas derived from all six registry definitions;
+  nullable optional properties and normalization back to existing Pydantic defaults.
+- Added `agent/orchestrator.py`: one selection, one bounded sequential batch, at most one
+  answer request with tools disabled; preserved call IDs and full stateless output replay.
+- Added `agent/evidence.py`: complete-record row/UTF-8 budgets, reference/source checks,
+  conservative supported-number checks and no-evidence handling.
+- Added `agent/mock.py`, `agent/cli.py` and extended the tools CLI with `ask --mock/--live`.
+  Mock selection/templates execute actual tools and do not fake database metrics.
+- Added `schemas/llm.py`: bounded public outcomes, trace IDs, tool status/results, citations
+  and safe errors; no private prompts/provider dumps/reasoning are returned.
+- Added `tests/test_llm.py` and `tests/test_openai_provider.py` (46 new cases).
+- Updated settings/environment template, safe logging fields, agent package docstring,
+  pyproject/lockfile, README, architecture, goals/plans/instructions and added docs/llm.md.
+- The only new direct dependency is official `openai>=2,<3`, resolved to **2.54.0**.
+  No frameworks, new database technology, HTTP routes, frontend or deployment were added.
+  Existing registry, SQL operations/privilege audit, document search, models/migrations
+  and prior test files remain unchanged.
+
+### Actual commands and results
+
+Initial Git state was clean `main...origin/main`. Python 3.12.15 was used after restoring
+the damaged temporary runtime described below.
+
+| Command/check | Actual result |
+| --- | --- |
+| Initial offline uv sync | Failed: temporary Python standard library missing (`encodings`). |
+| Offline Python reinstall | Failed: required runtime archive no longer cached. |
+| Approved online Python reinstall | Restored Python 3.12.15. |
+| First SDK installation using the old cache | Failed: an incomplete packaging wheel cache entry had no WHEEL file. |
+| Approved uv sync using a fresh temporary cache | Passed; 39 packages resolved; official SDK 2.54.0 plus required transitive dependencies installed. |
+| First full PostgreSQL run against the old temporary cluster | 154 tests passed, 32 setup errors: missing `global/pg_filenode.map`. Not an application assertion failure. |
+| Fresh isolated PostgreSQL bootstrap using existing migration/seed scripts | Passed on loopback port 55436; six business tables and standard fixture counts restored in a separate verification database. |
+| Existing reader-role script with a temporary random password | Passed; password not printed or stored in project files. |
+| Final full pytest with both PostgreSQL test URLs | **187 passed**, 1 existing dependency warning, in 5.84s. Includes all 32 prior PostgreSQL cases. |
+| Final pytest without database variables | **155 passed, 32 skipped**, 1 warning, in 1.04s. |
+| `pytest -q -m 'not postgres'` | **155 passed, 32 deselected** in 1.08s. |
+| `pytest -q tests/test_llm.py tests/test_openai_provider.py` | **46 passed** in 0.76s. All external model traffic mocked. |
+| `ruff check .` / `ruff format --check .` | Passed; 69 files already formatted. |
+| `git diff --check` | Passed. |
+| Offline `uv lock --check` with fresh cache | Passed; 39 packages, current lockfile. |
+| Function-schema inspection | Exactly six strict schemas, generated from the existing registry. |
+| Safe configuration-presence check | api_key_configured=false, model_configured=false; values never printed. |
+| Mock ask CLI, document question without any key/model | Completed with actual policy excerpt, E1 and original source citation. |
+| Three mock-provider question demos with actual registry tools | All completed with mechanically checked evidence; actual outputs below. |
+| Existing document evaluation | 20 questions, 10 documents/40 chunks, Hit Rate@5=1.0 and MRR@5=1.0 unchanged. |
+| API TestClient checks with no external services | Health, info, Swagger, ReDoc and OpenAPI returned 200. |
+| Existing API/SQL/audit/registry/retrieval/migration code diffs | Empty; those implementations retained unchanged. |
+| Tracked/pending file review | No .env/.venv files or recognized OpenAI/GitHub/private-key patterns. Targeted review, not an exhaustive secret audit. |
+
+Final full regression command used the fresh verification instance, not a live model:
+
+```sh
+TEST_DATABASE_URL=postgresql+psycopg://querypilot_admin@127.0.0.1:55436/querypilot_day6_verify TEST_READER_DATABASE_URL=postgresql+psycopg://querypilot_reader@127.0.0.1:55436/querypilot_day6_verify .venv/bin/python -m pytest -q --tb=short
+```
+
+### Mocked SDK/protocol and grounding coverage
+
+The actual SDK was exercised with httpx.MockTransport: request shape, model setting,
+store=false, encrypted-reasoning inclusion, tool_choice=none on follow-up, safe 401/429/500
+handling, network/timeout mapping, one-retry success/exhaustion, logical deadlines and
+incomplete responses. An end-to-end SDK-to-service-to-registry test verified six schemas,
+the exact call ID, actual Pydantic execution and tool-output replay without network access.
+
+Orchestration tests cover multiple calls and reasoning replay, JSON errors/nonfinite
+numbers/duplicate keys, unknown tools, Pydantic limits, malformed/duplicate IDs, excessive
+batches rejected before execution, no-tool replies, empty versus failed tools, forbidden
+second tool rounds, source preservation, unsupported numeric literals, invalid/orphan
+citations, capped evidence and post-timeout skipping. They also verify actual local document
+retrieval, safe logs and explicit live-configuration failure without mock substitution.
+
+These are deterministic contract/mechanical-grounding tests, not semantic answer guarantees.
+Citation membership and numeric checks cannot establish full factual entailment. The
+service deliberately refuses new arithmetic in Day 6. See docs/llm.md for exact limits.
+
+### Actual mock-mode demonstrations
+
+These used the fake provider with **real** seeded SQL/document registry operations, not
+OpenAI. Every outcome identified mode=mock and grounding_checks=passed:
+
+1. “What are the five highest-revenue products?” selected get_top_products and returned
+   Outdoors Product 064 USD 37,882.39; Office Product 035 USD 36,509.32; Electronics
+   Product 021 USD 35,946.86; Electronics Product 076 USD 35,386.60; Sports Product 063
+   USD 34,591.86, each referencing [E1].
+2. “What is the return policy?” selected search_business_documents, quoted the 30-calendar-day
+   return window and restrictions, and preserved [E1] plus [QP-RET-001#s002-c001].
+3. “How many failed payments occurred?” selected get_payment_status_summary and answered
+   “486 failed payment attempts [E1].”
+
+The existing tools CLI was extended, not replaced:
+
+```sh
+python -m querypilot.tools ask "What is the return policy?" --mock
+```
+
+No live API answer, live tool selection result, paid request, or real-world accuracy
+metric was produced. Live checks for all three questions remain explicitly pending.
+
+### Environment repairs and remaining limitations
+
+Temporary Python/cache files and the old PostgreSQL cluster had lost files during
+environment cleanup. The Python runtime was restored and a new cache was used. The old
+PostgreSQL cluster/directory was not deleted or modified; a separate temporary cluster
+was initialized, migrated and seeded using existing code. The new fixture again contains
+500 customers, 100 products, 3,000 orders, 6,000 items, 3,006 payments and 120 refunds.
+No database repair or deployment infrastructure was added to the application.
+
+Ruff caught two long strings and import ordering; corrections passed final checks. No
+Day 6 application assertion failures occurred. The existing FastAPI/Starlette HTTPX
+deprecation warning remains nonfatal. Normal README setup uses a regular Python 3.12
+installation, not the test environment's temporary runtime/cache locations.
+
+Live OpenAI verification is the unresolved integration check. Answer checks are conservative
+and incomplete; wrong relationships or number words can still mislead despite valid IDs.
+Tool await cancellation does not kill worker threads, and server-side SQL deadlines remain
+important. There is no autonomous retry/planning loop beyond the bounded SDK transport
+retry policy and no additional tool round after synthesis.
+
+Day 7, after a separate request: bounded multi-step orchestration with explicit iteration,
+tool and overall budgets while preserving protocol, privileges, citations and safe logging.
+No Day 7 implementation has begun. Explicit approval for the focused Day 6 commits/push
+was received in the follow-up request; live API usage remains separately unapproved.

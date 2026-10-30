@@ -21,7 +21,9 @@ Day 3 adds the PostgreSQL schema, migrations, explicit database transactions, a 
 dataset, developer queries, and verification. API startup and health remain independent
 of the database. Day 4 adds five approved read-only analytics tools and a provider-neutral
 registry. Day 5 adds local BM25 retrieval with citations as the sixth approved tool.
-LLM integration, chat, and the UI remain planned.
+Day 6 adds the official OpenAI Responses adapter and one bounded tool batch plus a final
+answer request, with mock verification. Live API validation remains pending. Multi-step
+autonomous orchestration, chat endpoints and the UI remain planned.
 
 ## Quality and security
 
@@ -85,3 +87,15 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Updated architecture/setup/progress documentation with actual results and limits.
 - No AI answers, embeddings, external search, model API, agent loop or frontend.
 - Prepare focused changes, wait for commit approval, and stop before Day 6.
+
+## Day 6 acceptance criteria
+
+- Official async OpenAI SDK with environment-only key/model, bounded timeout and retries.
+- All six function schemas derive from existing Pydantic registry definitions.
+- One selection request, a bounded batch, and at most one tools-disabled follow-up.
+- Correct call-ID correlation and complete stateless output/reasoning replay.
+- Structured outcomes with bounded evidence, safe errors, citations and trace IDs.
+- Deterministic mock CLI using real tools; explicit live mode with no fallback.
+- Mocked SDK/protocol, grounding-reference, privacy and existing regression tests.
+- No live-operational claim without approved actual API checks; no model key in logs.
+- No Day 7 loop, new API endpoint, frontend or deployment; wait for commit approval.

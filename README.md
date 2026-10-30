@@ -6,10 +6,11 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 5 document search.** FastAPI, PostgreSQL migrations, synthetic data,
-five read-only analytics tools, and local document retrieval are implemented. The registry
-has six approved tools. Chat, LLM integration, and the UI are not implemented. Search
-and API health/docs work without a database or API key.
+**Current status: Day 6 single-round function calling.** FastAPI, PostgreSQL, synthetic data,
+five read-only analytics tools, document retrieval, and the direct OpenAI SDK adapter are
+implemented. The six-tool workflow is mock/protocol verified; actual live API verification
+remains pending. No autonomous loop, chat endpoint or UI is implemented. Search, mock
+document demos and API health/docs work without a database or API key.
 
 ## Planned features
 
@@ -44,12 +45,12 @@ services, and configuration. See [architecture](docs/architecture.md) for bounda
 | HTTPX | FastAPI TestClient HTTP transport; development only | Day 2 |
 | PostgreSQL, SQLAlchemy, Psycopg | Database, models, driver | Day 3 |
 | Alembic | Versioned database schema migrations | Day 3 |
-| OpenAI Python SDK | LLM function/tool calling | Day 6 |
+| OpenAI Python SDK | Direct async Responses function calling, with bounded retries | Day 6 |
 | Streamlit | Interactive analytics interface | Day 9 |
 | Docker Compose, GitHub Actions | Service orchestration and CI | Later milestones |
 
 Runtime dependencies are FastAPI, Pydantic, Pydantic Settings, Uvicorn, SQLAlchemy,
-Psycopg (binary driver wheel), and Alembic. Development
+Psycopg (binary driver wheel), Alembic, and the official OpenAI SDK. Development
 dependencies are Pytest, Ruff, and HTTPX. Hatchling remains the isolated build dependency.
 Other libraries will be added when used. Uvicorn's base install supports `--reload`
 through polling, so no optional watcher or event-loop packages are required.
@@ -127,8 +128,9 @@ the server after changing them. `QUERYPILOT_CORS_ORIGINS` defaults to `[]`, allo
 cross-origin browser access. Supply exact HTTP(S) origins as a JSON array, without paths,
 credentials, query strings, fragments, or wildcards. CORS is a browser policy, not
 authentication. The current API allows GET and does not enable credentialed CORS.
-Database settings in `.env.example` are used only by explicit database commands; OpenAI
-entries remain unused. Starting the API never connects to PostgreSQL or migrates tables.
+Database settings are used by explicit database/tool commands. OpenAI settings are used
+only by explicit live ask commands. API startup never calls OpenAI, connects to PostgreSQL
+or migrates tables.
 
 Application HTTP errors use an `error` object with `code`, `message`, `request_id`, and
 `details`. Invalid requests receive 422; unknown routes 404; unexpected failures 500.
@@ -262,6 +264,51 @@ test URLs for the full PostgreSQL suite. The authored 20-question set measured *
 Rate@5 = 1.0 and MRR@5 = 1.0**. This is a curated regression set, not a held-out benchmark
 or a guarantee for arbitrary questions.
 
+## Single-round LLM demonstration
+
+Day 6 adds one model tool-selection request, a bounded batch of approved registry calls,
+and at most one follow-up request with tools disabled. It is not a multi-step autonomous
+agent loop. Strict function schemas derive from all six existing Pydantic tool contracts.
+
+```sh
+# Fake model selection/synthesis, actual local document retrieval; no API key needed:
+python -m querypilot.tools ask "What is the return policy?" --mock
+# Mock SQL demonstrations still require the real restricted reader database:
+python -m querypilot.tools ask "What are the five highest-revenue products?" --mock
+python -m querypilot.tools ask "How many failed payments occurred?" --mock
+```
+
+The mock policy answer quotes the 30-calendar-day window with `[E1]` and
+`[QP-RET-001#s002-c001]`. Actual seeded SQL demos reported five product revenues beginning
+with USD 37,882.39 and 486 failed payment attempts. These are **mock-mode wiring results**,
+not real model-selection measurements. SQL failures never substitute fake metrics.
+
+For deliberately authorized paid usage, set `OPENAI_API_KEY` and `OPENAI_MODEL` in your
+local environment or ignored `.env`. Choose a supported Responses tool-calling model
+available to your project; no model identifier or API key is hardcoded.
+
+```sh
+python -m querypilot.tools ask "What is the return policy?" --live
+```
+
+Live failures remain live errors, never silent mock fallback. No live request was made
+during Day 6: key/model were not configured. Real API/schema acceptance and answer quality
+remain unverified. See [LLM setup and limits](docs/llm.md) before enabling live usage.
+
+Outcomes contain trace ID, explicit mode, question, answer, tool status/evidence/citations
+and safe errors. Requests/retries, batch size, tool wait time and evidence bytes/rows are
+bounded. Citation membership and supported numeric literals are checked, but these checks
+do **not** prove semantic grounding or guarantee correctness. Retrieved text stays untrusted;
+SQL privileges and registry validation still enforce the actual execution boundary.
+
+```sh
+pytest -q tests/test_llm.py tests/test_openai_provider.py
+pytest -q -m 'not postgres'
+```
+
+All external model calls in standard tests are mocked, including official SDK HTTP tests
+using an in-memory transport. Live verification is opt-in via the CLI, outside default CI.
+
 ## Development roadmap
 
 Day 1 establishes the foundation. Day 2 adds FastAPI and health; Day 3 introduces
@@ -279,6 +326,7 @@ See [PLANS.md](PLANS.md) for the detailed proposed sequence.
 - [docs/database.md](docs/database.md): PostgreSQL setup, ER diagram, accounting and reader access.
 - [docs/tools.md](docs/tools.md): approved analytics contracts, security model, CLI and tests.
 - [docs/document_search.md](docs/document_search.md): corpus, categories, safe ingestion and evaluation.
+- [docs/llm.md](docs/llm.md): single-round Responses integration, mock/live modes and evidence limits.
 - [docs/progress.md](docs/progress.md): implementation and verification status.
 - [data/sample/](data/sample/README.md): synthetic fixture policy and developer SQL.
 

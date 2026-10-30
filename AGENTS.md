@@ -2,8 +2,9 @@
 
 ## Milestone discipline
 
-Days 1–4 established the package, API, database, and read-only analytics foundation.
-Day 5 adds local document retrieval and citations without LLM integration or new endpoints.
+Days 1–5 established API, database, analytics and document retrieval. Day 6 adds direct
+OpenAI function calling with one tool batch and one controlled answer request, not an
+autonomous loop or new HTTP endpoint.
 Read GOALS.md, PLANS.md,
 docs/architecture.md, and docs/progress.md before changing scope. Stop after the
 requested milestone; later milestones require a new request. User instructions
@@ -67,4 +68,9 @@ registry/security tests, and documentation. Day 4 excluded LLM integration and t
 
 The Day 5 request initially required commit/push approval. The user has now explicitly
 approved the GitHub workflow for Day 5. Use focused corpus/ingestion,
-registry/evaluation/tests, and documentation commits. Stop before Day 6 and model API integration.
+registry/evaluation/tests, and documentation commits. Day 5 excluded model API integration.
+
+The user has now approved committing and pushing Day 6, requesting more than four
+meaningful commits where possible. Use five groups: provider/configuration, contracts/
+evidence, orchestration/CLI, tests, and documentation. Paid live API checks still require
+configured credentials and separate usage approval. Do not begin Day 7 or add a UI/deployment.
