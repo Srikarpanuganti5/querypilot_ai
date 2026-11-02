@@ -10,6 +10,7 @@ import httpx
 import pytest
 from openai import AsyncOpenAI
 
+from querypilot.agent.multistep import MultiStepService
 from querypilot.agent.orchestrator import SingleRoundService
 from querypilot.agent.provider import OpenAIProvider, ProviderError
 from querypilot.core.config import Settings
@@ -258,3 +259,93 @@ def test_sdk_to_registry_end_to_end_without_network() -> None:
     assert result.status == "completed"
     assert result.tools[0].call_id == "call_exact"
     assert len(requests) == 2
+
+
+def test_sdk_multiround_full_replay_and_exact_ids() -> None:
+    requests = []
+    reasoning = {
+        "type": "reasoning",
+        "id": "rs_first",
+        "encrypted_content": "opaque",
+        "summary": [],
+    }
+
+    def handler(request):
+        body = json.loads(request.content)
+        requests.append(body)
+        assert len(body["tools"]) == 6 and body["tool_choice"] == "auto"
+        assert body["store"] is False
+        assert body["include"] == ["reasoning.encrypted_content"]
+        index = len(requests)
+        if index > 1:
+            assert reasoning in body["input"]
+            outputs = [item for item in body["input"] if item.get("type") == "function_call_output"]
+            assert [item["call_id"] for item in outputs] == [
+                f"call_exact_{i}" for i in range(1, index)
+            ]
+            for item in outputs:
+                assert json.loads(item["output"])["result"]["status"] == "success"
+        if index < 3:
+            output = [
+                {
+                    "type": "function_call",
+                    "id": f"fc_{index}",
+                    "call_id": f"call_exact_{index}",
+                    "name": "search_business_documents",
+                    "arguments": json.dumps(
+                        {
+                            "query": "product return window"
+                            if index == 1
+                            else "failed payments and retries",
+                            "top_k": 1,
+                            "category": None,
+                        }
+                    ),
+                    "status": "completed",
+                }
+            ]
+            if index == 1:
+                output.insert(0, reasoning)
+        else:
+            output = [
+                {
+                    "type": "message",
+                    "id": "msg_final",
+                    "role": "assistant",
+                    "status": "completed",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "annotations": [],
+                            "text": "Returns within 30 days [E1] [QP-RET-001#s002-c001]. "
+                            "Failed attempts collect no money [E2] [QP-PAY-003#s002-c001].",
+                        }
+                    ],
+                }
+            ]
+        return httpx.Response(200, json=response(output=output))
+
+    async def scenario():
+        settings = Settings(
+            _env_file=None, openai_api_key="TEST_KEY", openai_model="configured-model"
+        )
+        client = AsyncOpenAI(
+            api_key="TEST_KEY",
+            max_retries=0,
+            http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        provider = OpenAIProvider(settings, client=client)
+        registry = ToolRegistry(settings=settings)
+        try:
+            return await MultiStepService(provider, registry, settings).run(
+                "Returns and failed payments?"
+            )
+        finally:
+            await provider.close()
+            registry.close()
+
+    result = asyncio.run(scenario())
+    assert result.status == "completed" and result.iterations == 3
+    assert [trace.call_id for trace in result.tools] == ["call_exact_1", "call_exact_2"]
+    assert "opaque" not in result.model_dump_json()
+    assert len(requests) == 3
