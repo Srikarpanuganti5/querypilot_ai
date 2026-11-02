@@ -66,7 +66,14 @@ class MockProvider:
                         f"payment attempts [{evidence}]."
                     )
                 elif data["operation"] == "get_revenue_summary":
-                    answers.append(f"{row['bucket']}: USD {row['revenue']} [{evidence}].")
+                    answers.extend(
+                        f"{bucket['bucket']}: USD {bucket['revenue']} [{evidence}]."
+                        for bucket in data["rows"]
+                    )
+                    if data.get("truncated"):
+                        answers.append(
+                            "Only forwarded revenue buckets are shown; results are incomplete."
+                        )
                 else:
                     answers.append(
                         f"Customer {row['customer_id']}: {row['order_count']} orders [{evidence}]."
@@ -75,3 +82,49 @@ class MockProvider:
 
     async def close(self) -> None:
         pass
+
+
+class MultiStepMockProvider(MockProvider):
+    """Deterministic offline fixture; never used for live dispatch."""
+
+    async def respond(self, instructions, history, tools, *, final=False) -> ProviderTurn:
+        if final:
+            return await super().respond(instructions, history, tools, final=True)
+        lower = history[0]["content"].casefold()
+        plan = []
+        if "product" in lower and ("top" in lower or "revenue" in lower):
+            plan.append(("get_top_products", {"limit": 5}))
+        elif "revenue" in lower:
+            plan.append(("get_revenue_summary", {"group_by": "month"}))
+        elif "failed" in lower and "payment" in lower and "handled" not in lower:
+            plan.append(("get_payment_status_summary", {}))
+        elif "customer" in lower and "order" in lower:
+            plan.append(("get_customer_order_summary", {"limit": 5}))
+        if "policy" in lower or "return" in lower or "handled" in lower or not plan:
+            query = (
+                "failed payments and retries"
+                if "failed" in lower and "payment" in lower
+                else "product return window"
+                if "return" in lower or "refund" in lower
+                else history[0]["content"]
+            )
+            plan.append(("search_business_documents", {"query": query, "top_k": 1}))
+        completed = sum(item.get("type") == "function_call_output" for item in history)
+        if completed >= len(plan):
+            return await super().respond(instructions, history, tools, final=True)
+        name, values = plan[completed]
+        schema = next(tool["parameters"] for tool in tools if tool["name"] == name)
+        return ProviderTurn(
+            [
+                {
+                    "type": "function_call",
+                    "id": f"fc_mock_{completed + 1}",
+                    "call_id": f"mock_call_{completed + 1}",
+                    "name": name,
+                    "arguments": json.dumps(
+                        {field: values.get(field) for field in schema["properties"]}
+                    ),
+                    "status": "completed",
+                }
+            ]
+        )
