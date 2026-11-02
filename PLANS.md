@@ -1,9 +1,9 @@
 # Development roadmap
 
-Days 1–5 are implemented and pushed. Day 6 adds the direct Responses API adapter,
-single-round tool batch/follow-up service and mock/live CLI. Mock/protocol tests are
-verified; live API behavior remains pending credentials and explicit usage approval.
-The user has approved five focused Day 6 commits and a push. Day 7 and later need a separate request.
+Days 1–6 are implemented and pushed. Day 7 adds the bounded multi-step service,
+request-local state, recovery, limits and updated CLI. Mock/protocol verification is
+implemented; actual results are recorded in docs/progress.md. Live API behavior remains
+pending credentials and explicit usage approval. The user has approved focused Day 7 commits and a push.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -15,8 +15,8 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 4 | Five validated analytics operations, registry, CLI, reader role audit and timeouts | Accounting, rejection, privacy, bounds, actual PostgreSQL permission/timeout tests |
 | 5 | Ten policies, safe ingestion, BM25, sixth tool and citations | Filesystem/retrieval tests, 20-question metrics, SQL/API regressions |
 | 6 | Async SDK, six strict schemas, one tool batch/follow-up, evidence bounds, CLI | Mocked SDK/protocol/error/grounding tests; actual API checks remain opt-in |
-| 7 | Multi-step orchestration and traces | Loop bounds and evidence propagation |
-| 8 | Validation, errors, timeouts, logging | Failure-path and security tests |
+| 7 | Bounded multi-step orchestration, state, traces and CLI | Mock A–D demos, SDK replay, limits/recovery/isolation and regressions |
+| 8 | Advanced guardrails and reliability | Broader failure-path, adversarial and security tests |
 | 9 | Streamlit interface | Chat and evidence display |
 | 10 | Broader automated tests | API, tool, and database integration coverage |
 | 11 | Agent evaluations | Tool choice, factual support, injection scenarios |
@@ -84,9 +84,16 @@ The user has now approved committing and pushing Day 6, requesting more than fou
 where meaningful. Split the implementation into provider/configuration, contracts/evidence,
 orchestration/CLI, tests, and documentation commits.
 
-## Day 7 prerequisites
+## Day 7 implementation and review groups
 
-After a separate request, extend the single-round service into explicitly bounded multi-step
-orchestration while preserving read-only privileges, budgets, safe logging and source
-provenance. Verify the live adapter with approved API access before making live-operational
-claims. No autonomous loop is part of Day 6.
+1. Configuration/state: validated hard limits, bounded execution contracts, ephemeral state.
+2. Loop/evidence: multi-round provider replay, sequential registry execution, recovery,
+   repeated-call suppression, deadlines, context/evidence caps and citation checks.
+3. CLI/mock: public querypilot.cli entry point, compatible tools ask, deterministic mock
+   fixtures, trace option and execution-limit overrides.
+4. Tests: loop/state/recovery/security/CLI and official SDK multi-round protocol contracts.
+5. Documentation: setup, architecture, safety/grounding limits and actual verification.
+
+No new dependency or schema migration is needed. Preserve existing SQL privileges,
+retrieval, APIs and Day 6 single-round behavior. The user has now approved committing/pushing Day 7 in focused groups. Day 8 starts only after a separate request and covers advanced
+guardrails and reliability; no frontend, persistent memory or deployment is included today.

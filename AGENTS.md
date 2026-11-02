@@ -2,9 +2,10 @@
 
 ## Milestone discipline
 
-Days 1–5 established API, database, analytics and document retrieval. Day 6 adds direct
-OpenAI function calling with one tool batch and one controlled answer request, not an
-autonomous loop or new HTTP endpoint.
+Days 1–6 established API, database, analytics, document retrieval and direct OpenAI
+function calling. Day 7 adds bounded multi-step orchestration with isolated request state.
+Keep the Day 6 SingleRoundService compatible; both ask CLIs now use MultiStepService.
+No chat HTTP endpoint, UI, persistent memory or deployment is part of Day 7.
 Read GOALS.md, PLANS.md,
 docs/architecture.md, and docs/progress.md before changing scope. Stop after the
 requested milestone; later milestones require a new request. User instructions
@@ -73,4 +74,8 @@ registry/evaluation/tests, and documentation commits. Day 5 excluded model API i
 The user has now approved committing and pushing Day 6, requesting more than four
 meaningful commits where possible. Use five groups: provider/configuration, contracts/
 evidence, orchestration/CLI, tests, and documentation. Paid live API checks still require
-configured credentials and separate usage approval. Do not begin Day 7 or add a UI/deployment.
+configured credentials and separate usage approval.
+
+The user has now explicitly approved committing and pushing Day 7 in focused groups:
+limits/state, loop/evidence, CLI/mock, tests, and documentation. Paid live API usage
+remains separately unapproved. Stop after Day 7; Day 8 requires another request.

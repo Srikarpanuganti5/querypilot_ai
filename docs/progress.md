@@ -636,5 +636,153 @@ retry policy and no additional tool round after synthesis.
 
 Day 7, after a separate request: bounded multi-step orchestration with explicit iteration,
 tool and overall budgets while preserving protocol, privileges, citations and safe logging.
-No Day 7 implementation has begun. Explicit approval for the focused Day 6 commits/push
+At the close of Day 6, no Day 7 implementation had begun. Explicit approval for the focused Day 6 commits/push
 was received in the follow-up request; live API usage remains separately unapproved.
+
+## Day 7 — Bounded multi-step orchestration (2026-11-02)
+
+Implementation and mock/protocol verification are complete. The initial working tree was
+clean on main, synchronized with origin/main. Days 1–6 were already committed/pushed.
+The Day 7 attachment initially required approval before committing/pushing. The user
+has now explicitly approved five focused commits and a push to the existing repository. No paid OpenAI requests, new HTTP routes, UI, persistent
+memory, deployment infrastructure, dependencies or schema migrations were added.
+
+### Files and architecture
+
+Created:
+
+- `src/querypilot/agent/multistep.py`: generic bounded loop reusing the Day 6 registry
+  execution and provider boundary, full stateless replay, recovery and budget checks.
+- `src/querypilot/agent/state.py`: request-local UUID/question/messages, iteration,
+  call IDs/fingerprints, evidence/citations, safe errors, status and monotonic elapsed time.
+- `src/querypilot/cli.py`: public `python -m querypilot.cli ask` entry point.
+- `tests/test_multistep.py`: 60 deterministic cases covering loop behavior, limits,
+  state isolation, protocol, recovery, CLI, logging and evidence/citation security.
+- `docs/agent.md`: current CLI, limits, state, error handling and known limitations.
+
+Modified:
+
+- `core/config.py`, `.env.example`: five validated agent settings and documented defaults.
+- `schemas/llm.py`: up to 20 traces/E IDs, per-tool iteration, run iterations/elapsed_ms.
+- `agent/cli.py`: MultiStepService, optional verbose evidence and five limit overrides.
+- `agent/mock.py`: explicit deterministic multi-round fixture using actual registry
+  results; revenue templates now show forwarded buckets and acknowledge truncation.
+- `agent/evidence.py`: additionally reject invented short bracketed document references.
+- `agent/__init__.py`: current capability description.
+- `tests/test_openai_provider.py`: actual SDK, in-memory HTTP transport, three-request
+  replay test with original IDs, complete prior output and encrypted reasoning.
+- README, AGENTS, GOALS, PLANS, architecture, LLM guide and this progress log: current
+  scope, approval boundary, Mermaid sequence, setup, actual results and remaining checks.
+
+The Day 6 SingleRoundService remains unchanged and regression-tested. Current ask CLIs
+use MultiStepService, while direct tool CLI commands retain their behavior. SQL builders,
+restricted-role audit, registry dispatch, models, migrations, document retrieval and API
+implementations remain unchanged. Existing dependencies were sufficient; the installed
+editable environment and Python 3.12.15 worked without reinstalling anything.
+
+Each model response is one iteration, including the final answer. Calls within a batch
+execute sequentially; later batches can depend on earlier results. Every iteration uses
+all six schemas and full call_id-matched output/reasoning replay. State is created inside
+run() rather than retained on the service. Errors can be fed back for correction or a
+different tool; canonical duplicate calls return repeated_call without new I/O and still
+count against the call cap. Live dispatch has no keyword-based planning; only the explicit
+offline mock fixture has deterministic selection/templates.
+
+### Actual verification
+
+All external model traffic in these tests used scripted providers or httpx.MockTransport.
+The existing native PostgreSQL fixture on loopback port 55436 was used, with the existing
+restricted reader. Database tests use isolated schemas as before; no cluster was recreated
+or seeded during Day 7. Initial sandbox pg_isready returned no response; the approved
+outside-sandbox check confirmed the server was accepting connections.
+
+| Command/check | Actual result |
+| --- | --- |
+| `.venv/bin/python --version` | Python 3.12.15. |
+| Initial existing pytest suite before new tests | 155 passed, 32 skipped; compatibility retained. |
+| First 50 new loop tests | 50 passed. |
+| Intermediate full suite with PostgreSQL | 237 passed; later additions increased coverage. |
+| Final full suite with both PostgreSQL test URLs | **248 passed**, 1 existing dependency warning, in 6.53s. Includes all 32 PostgreSQL cases. |
+| Final full suite without database test settings | **216 passed, 32 skipped**, 1 warning, in 1.90s. |
+| `pytest -q tests/test_multistep.py tests/test_llm.py tests/test_openai_provider.py --tb=short` | **107 passed** in 1.61s. |
+| `ruff check .` | Passed. |
+| `ruff format --check .` | Passed; 74 files already formatted. |
+| `git diff --check` | Passed before final progress update; checked again after documentation. |
+| Four mock-provider scenarios with actual reader SQL/document registry | All completed with original source citations and grounding_checks=passed (mechanical checks only). |
+| Public CLI document command with --mock --verbose | Exit 0, actual excerpt, bounded typed evidence and original citation. |
+| Existing tools ask command in --mock mode | Exit 0, document answer and concise traces. |
+| Search evaluation | 20 questions, 10 documents/40 chunks; Hit Rate@5=1.0, MRR@5=1.0 unchanged. Authored regression set, not general accuracy. |
+| Safe OpenAI settings-presence check | api_key_configured=false, model_configured=false; no values printed. |
+| Live OpenAI requests | Not run: credentials/model unconfigured and paid live usage not approved. |
+| Dependency installation / lock regeneration | Not needed; dependencies and lockfile unchanged. |
+| Docker startup | Not attempted; outside Day 7 scope, no new container verification claim. |
+
+The final database regression command was:
+
+```sh
+TEST_DATABASE_URL=postgresql+psycopg://querypilot_admin@127.0.0.1:55436/querypilot_day6_verify TEST_READER_DATABASE_URL=postgresql+psycopg://querypilot_reader@127.0.0.1:55436/querypilot_day6_verify .venv/bin/python -m pytest -q --tb=short
+```
+
+The full suite includes existing FastAPI endpoint/error/CORS tests, all five SQL operations,
+actual reader write denial and statement cancellation/recovery, document search/filesystem
+regressions and retained Day 6 protocol tests. New tests cover both SQL→document and
+document→SQL order, multiple calls in a round, repeated calls/default normalization,
+invalid arguments/JSON/unknown names, failures and recovery, empty results, provider
+failure preservation, duplicate call IDs across rounds, E10 handling, concurrent request
+isolation, context growth/UTF-8 size, payload and accumulated error-packet budgets,
+iteration/total/per-round call limits, tool/model/overall timeouts, config upper bounds,
+safe logs, CLI options and invented document references.
+
+Initial Ruff checks caught long lines/import ordering; formatting and string wrapping
+resolved them before final checks. No pytest assertion failures occurred. The existing
+FastAPI/Starlette HTTPX deprecation warning remains nonfatal; no dependency migration was
+introduced to suppress it.
+
+### Actual mock A–D scenarios
+
+All four questions were run through the current ask service in mock mode with the real
+registry, existing synthetic PostgreSQL data and local documents. Optional date arguments
+were null (all available fixture history); the configured reader performed the SQL.
+
+| Scenario | Executed operations and arguments, in order | Iterations / actual answer evidence |
+| --- | --- | --- |
+| A: top five products by revenue | `get_top_products(limit=5)` | 2; E1, five actual product revenues. |
+| B: return policy | `search_business_documents(query="product return window", top_k=1)` | 2; E1, `QP-RET-001#s002-c001`. |
+| C: top products and refund policy | `get_top_products(limit=5)` → the same return-window search | 3; E1 product rows, E2 and original return source. |
+| D: revenue trend and failed-payment handling | `get_revenue_summary(group_by="month")` → `search_business_documents(query="failed payments and retries", top_k=1)` | 3; E1 monthly rows, E2 and `QP-PAY-003#s002-c001`. |
+
+A/C returned Outdoors Product 064 USD 37,882.39; Office Product 035 USD 36,509.32;
+Electronics Product 021 USD 35,946.86; Electronics Product 076 USD 35,386.60; Sports Product
+063 USD 34,591.86. The repository marks that more products exist; these are the selected
+top five, not whole-catalog totals.
+
+B/C quoted the actual 30-calendar-day return passage, unused/original-packaging conditions
+and the limitation that delivery events are absent from the database. The fixture selects
+one relevant policy passage; this is not a full summary of every refund-policy section.
+D displayed ten monthly buckets, beginning 2025-10 USD 25,302.17 and ending 2026-07
+USD 142,766.77. The row cap omitted later buckets; both the trace and answer explicitly
+marked the displayed series incomplete. The payment passage states that failed attempts
+collect no money, stay out of revenue, and retries do not duplicate orders or line revenue.
+All figures and excerpts came from forwarded actual tool results, not an OpenAI response.
+
+### Safety limits and remaining work
+
+Defaults: 5 model requests, 10 total call attempts, 5 calls per round, 90-second execution
+await budget, 128000-byte serialized context, 12000-byte per-tool evidence cap and
+48000-byte accumulated evidence cap. Hard upper bounds and smaller limits are validated
+and tested. Evidence reserves are divided across the configured total-call cap, removing
+whole records to fit. Invalid/oversized batches fail before executing any member. Tool
+deadlines stop further work; limit errors preserve prior bounded evidence without an
+invented partial answer. Prompts/history/private reasoning are absent from public traces.
+
+No unresolved Day 7 implementation blocker remains. Live API acceptance/behavior is still
+unverified. Grounding validation checks membership and numeric literals, not semantic
+entailment; false relationships or number words may still pass. Retrieved content remains
+untrusted, without a claim of complete prompt-injection resistance. Thread cancellation
+cannot forcibly stop synchronous tools, so process shutdown may exceed the await deadline.
+Context limits count serialized bytes, not provider tokens or entire process memory.
+Duplicate suppression also prevents identical transient-failure retries within one run.
+
+Approved focused commit groups: limits/state/contracts; loop/evidence checks;
+CLI/mock; tests; documentation. Day 8 preview is Advanced Guardrails and Reliability,
+including broader adversarial and failure-path evaluation. Day 8 has not been started.

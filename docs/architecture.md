@@ -1,16 +1,80 @@
 # Architecture
 
-## Current state: Day 6
+## Current state: Day 7
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
 and sanitized exception handling. Day 3 adds PostgreSQL infrastructure invoked explicitly
 by migration, seed, and verification commands. API initialization remains database-free.
-The direct OpenAI adapter and single-round service are implemented with mock/protocol
-verification; actual API verification is pending. No autonomous agent loop, chat endpoint,
-frontend, full deployment or CI is present.
+The direct OpenAI adapter and bounded multi-step service are implemented with mock/protocol
+verification; actual API verification is pending. No chat endpoint, frontend, persistent
+conversation memory, full deployment or CI is present.
 
-## Single-round model/tool service
+## Multi-step model/tool service
+
+```mermaid
+sequenceDiagram
+    participant U as CLI
+    participant A as MultiStepService
+    participant S as Request-local AgentState
+    participant M as Responses provider
+    participant R as Six-tool registry
+    U->>A: Question and validated limits
+    A->>S: New request ID, question, empty evidence
+    loop At most configured model iterations
+        A->>A: Check deadline and serialized context budget
+        A->>M: Instructions, schemas and full bounded history
+        M-->>A: Output items and optional function calls
+        alt Tool calls
+            A->>A: Validate batch count, unique IDs and context
+            loop Each call, sequentially
+                A->>A: Suppress canonical duplicates
+                A->>R: Approved name and validated arguments
+                R-->>A: Typed evidence or sanitized error
+                A->>S: Bounded evidence, citations, trace and original call ID
+            end
+        else Answer without calls
+            A->>A: Check evidence references, source citations and numbers
+            A-->>U: Checked answer or explicit uncertainty
+        end
+    end
+    Note over A,U: Limits/errors preserve earlier evidence; no fabricated partial answer
+```
+
+`agent/multistep.py` reuses the Day 6 execution/provider boundary instead of recreating
+registry dispatch. It is provider-independent: live responses decide tool selection and
+continuation; only the explicit mock provider has deterministic fixture plans. Each model
+request is one iteration, including the final answer. Several calls can share an iteration.
+All output items, including encrypted reasoning, and original call_id-correlated results
+are replayed without trimming away protocol items. Context exhaustion stops execution.
+
+`agent/state.py` holds one run's UUID, question, monotonic start, iteration, message history,
+call IDs, canonical fingerprints, bounded tool results/citations, errors and status. State
+is constructed inside run(), never stored on the service or persisted. Public outcomes
+include iterations/elapsed_ms and each trace's iteration; internal messages and fingerprints
+are never emitted. The CLI owns a registry/provider for one request and closes them.
+
+Errors from invalid JSON/arguments, unknown names, empty results and ordinary tool failures
+can be returned to the model for recovery. Canonical duplicate calls, including omitted
+versus explicit defaults, return repeated_call without executing again; they still count
+toward the call budget. Reused protocol IDs and malformed/oversized batches abort before
+any execution in that batch. Tool deadlines stop further work to avoid overlapping a
+still-running synchronous worker. Provider failures, context/evidence exhaustion, overall
+deadlines and iteration/call limits stop with structured errors and prior evidence.
+
+The defaults are 5 model requests, 10 total calls, 5 calls per round, 90 seconds, 128,000
+serialized context bytes and 48,000 accumulated evidence bytes. Whole records are bounded
+before replay/trace storage. Context counts instructions, schemas and complete history;
+it is a UTF-8 byte budget, not a token count or provider context-window guarantee. Worker
+threads cannot be forcibly cancelled, so process shutdown can exceed the await deadline.
+See [agent.md](agent.md) for exact hard limits and [llm.md](llm.md) for adapter details.
+
+All six tools retain their existing validation, fixed SQL, restricted reader audit,
+read-only transactions, server deadlines and safe retrieval. Grounding checks reject
+unsupported IDs and some numeric claims; they do not establish semantic entailment or
+prevent every prompt-injection attack. No model-driven SQL or command executor exists.
+
+## Retained Day 6 single-round service
 
 ```mermaid
 flowchart LR
@@ -39,9 +103,10 @@ cuts JSON mid-record. Document citations come only from forwarded passages. Fina
 need valid evidence IDs, exact associated source citations and supported numeric literals.
 These are mechanical checks, not semantic entailment or a grounding guarantee.
 
-`schemas/llm.py` exposes safe outcomes/evidence traces. The tools CLI's `ask` command
-selects explicit mock/live mode. Mock mode uses deterministic provider fixtures with the
-real registry; live errors never switch modes. Synchronous tools execute off the event
+`schemas/llm.py` exposes safe outcomes/evidence traces. The current ask CLI uses the new
+multi-step service; SingleRoundService remains independently usable and regression-tested.
+Mock mode uses deterministic provider fixtures with the real registry; live errors never
+switch modes. Synchronous tools execute off the event
 loop, with an await deadline and skip-on-timeout behavior. Worker threads are not forcibly
 terminated; database-side timeouts still matter. See [llm.md](llm.md) for exact limits,
 protocol references, grounding limitations and current live-verification status.
@@ -230,8 +295,9 @@ for package imports rather than relying on application code at the repository ro
 
 Python 3.12 is the baseline. FastAPI, Pydantic, Pydantic Settings, and Uvicorn support the
 current backend. SQLAlchemy, Psycopg, and Alembic support the explicit database workflow.
-Pytest, Ruff, and HTTPX support development and tests. OpenAI tool calling, Streamlit,
-full Docker deployment, and GitHub Actions arrive later.
+Pytest, Ruff, and HTTPX support development and tests. The official OpenAI SDK supports
+the current mock/protocol-verified adapter. Streamlit, full Docker deployment, and GitHub
+Actions arrive later.
 
 There will be no arbitrary SQL interface. Tools will accept validated business parameters
 for code-owned queries. Agent credentials will be read-only and separate from setup

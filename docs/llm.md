@@ -3,6 +3,9 @@
 Day 6 adds a direct official OpenAI Python SDK adapter and a bounded **single-round**
 service. It is not the Day 7 autonomous agent loop, and adds no HTTP chat endpoint.
 The six existing registry tools remain the only executable business operations.
+Day 7 now provides [MultiStepService and the current ask CLI](agent.md). The lifecycle
+and actual-batch budgets below describe the retained SingleRoundService specifically;
+the current CLI permits additional rounds and reserves evidence across its total-call cap.
 
 ## Configuration and modes
 

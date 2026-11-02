@@ -6,10 +6,10 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 6 single-round function calling.** FastAPI, PostgreSQL, synthetic data,
+**Current status: Day 7 bounded multi-step orchestration.** FastAPI, PostgreSQL, synthetic data,
 five read-only analytics tools, document retrieval, and the direct OpenAI SDK adapter are
 implemented. The six-tool workflow is mock/protocol verified; actual live API verification
-remains pending. No autonomous loop, chat endpoint or UI is implemented. Search, mock
+remains pending. The agent supports repeated tool rounds; no chat endpoint or UI is implemented. Search, mock
 document demos and API health/docs work without a database or API key.
 
 ## Planned features
@@ -264,18 +264,20 @@ test URLs for the full PostgreSQL suite. The authored 20-question set measured *
 Rate@5 = 1.0 and MRR@5 = 1.0**. This is a curated regression set, not a held-out benchmark
 or a guarantee for arbitrary questions.
 
-## Single-round LLM demonstration
+## Multi-step agent demonstration
 
-Day 6 adds one model tool-selection request, a bounded batch of approved registry calls,
-and at most one follow-up request with tools disabled. It is not a multi-step autonomous
-agent loop. Strict function schemas derive from all six existing Pydantic tool contracts.
+Day 7 extends the workflow into repeated model/tool rounds with a grounded final answer.
+Strict schemas still derive from all six registry tools. The Day 6 SingleRoundService
+remains available for compatibility; both ask CLI entry points now use MultiStepService.
 
 ```sh
 # Fake model selection/synthesis, actual local document retrieval; no API key needed:
-python -m querypilot.tools ask "What is the return policy?" --mock
+python -m querypilot.cli ask "What is the return policy?" --mock
 # Mock SQL demonstrations still require the real restricted reader database:
 python -m querypilot.tools ask "What are the five highest-revenue products?" --mock
 python -m querypilot.tools ask "How many failed payments occurred?" --mock
+python -m querypilot.cli ask "Which products generated the most revenue, and what is our refund policy?" --mock --verbose
+python -m querypilot.cli ask "What is the revenue trend, and how are failed payments handled?" --mock --max-iterations 5 --max-tool-calls 10 --timeout-seconds 90
 ```
 
 The mock policy answer quotes the 30-calendar-day window with `[E1]` and
@@ -292,10 +294,10 @@ python -m querypilot.tools ask "What is the return policy?" --live
 ```
 
 Live failures remain live errors, never silent mock fallback. No live request was made
-during Day 6: key/model were not configured. Real API/schema acceptance and answer quality
-remain unverified. See [LLM setup and limits](docs/llm.md) before enabling live usage.
+during Days 6–7: key/model were not configured. Real API/schema acceptance and answer quality
+remain unverified. See [LLM setup](docs/llm.md) and [agent limits](docs/agent.md) before enabling live usage.
 
-Outcomes contain trace ID, explicit mode, question, answer, tool status/evidence/citations
+Verbose outcomes contain trace ID, explicit mode, question, answer, tool status/evidence/citations
 and safe errors. Requests/retries, batch size, tool wait time and evidence bytes/rows are
 bounded. Citation membership and supported numeric literals are checked, but these checks
 do **not** prove semantic grounding or guarantee correctness. Retrieved text stays untrusted;
@@ -308,6 +310,21 @@ pytest -q -m 'not postgres'
 
 All external model calls in standard tests are mocked, including official SDK HTTP tests
 using an in-memory transport. Live verification is opt-in via the CLI, outside default CI.
+
+The default limits are **5 model iterations, 10 total calls, 5 calls per iteration and
+90 seconds**. A final answer request counts as an iteration. Pydantic enforces upper
+bounds of 10 iterations, 20 total calls, 6 calls per iteration and 300 seconds. Context
+is capped at 128,000 UTF-8 serialized bytes (instructions, schemas and history); individual
+tool packets at 12,000 bytes and accumulated evidence at 48,000 bytes. All are configurable
+through the settings in `.env.example`; CLI flags override the corresponding agent limits.
+Calls execute sequentially, and repeated canonical calls return errors without reexecution.
+Limit failures preserve earlier evidence but do not return a fabricated partial answer.
+
+Without `--verbose`, the CLI omits the question, arguments, call IDs and result bodies;
+verbose mode includes bounded evidence, never private reasoning or internal prompts.
+Only use synthetic input. State is local to each run, with no persistent conversation memory.
+Tool await cancellation cannot kill a running worker thread; CLI shutdown can outlast its
+deadline. See [agent behavior and limitations](docs/agent.md).
 
 ## Development roadmap
 
@@ -326,7 +343,8 @@ See [PLANS.md](PLANS.md) for the detailed proposed sequence.
 - [docs/database.md](docs/database.md): PostgreSQL setup, ER diagram, accounting and reader access.
 - [docs/tools.md](docs/tools.md): approved analytics contracts, security model, CLI and tests.
 - [docs/document_search.md](docs/document_search.md): corpus, categories, safe ingestion and evaluation.
-- [docs/llm.md](docs/llm.md): single-round Responses integration, mock/live modes and evidence limits.
+- [docs/llm.md](docs/llm.md): Responses adapter, setup and retained Day 6 service.
+- [docs/agent.md](docs/agent.md): Day 7 loop, state, limits, recovery and CLI.
 - [docs/progress.md](docs/progress.md): implementation and verification status.
 - [data/sample/](data/sample/README.md): synthetic fixture policy and developer SQL.
 

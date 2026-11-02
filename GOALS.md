@@ -22,8 +22,9 @@ dataset, developer queries, and verification. API startup and health remain inde
 of the database. Day 4 adds five approved read-only analytics tools and a provider-neutral
 registry. Day 5 adds local BM25 retrieval with citations as the sixth approved tool.
 Day 6 adds the official OpenAI Responses adapter and one bounded tool batch plus a final
-answer request, with mock verification. Live API validation remains pending. Multi-step
-autonomous orchestration, chat endpoints and the UI remain planned.
+answer request, with mock verification. Day 7 adds bounded multi-step orchestration,
+isolated state, repeated-call handling and context/time/tool limits. Live API validation
+remains pending. Chat endpoints and the UI remain planned.
 
 ## Quality and security
 
@@ -99,3 +100,16 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Mocked SDK/protocol, grounding-reference, privacy and existing regression tests.
 - No live-operational claim without approved actual API checks; no model key in logs.
 - No Day 7 loop, new API endpoint, frontend or deployment; wait for commit approval.
+
+## Day 7 acceptance criteria
+
+- Multiple model/tool rounds, multiple calls per round, all six existing tools accessible.
+- Configurable iteration, total/per-round call, duration, payload and context bounds.
+- Request-local state with IDs, messages, evidence/citations, errors and elapsed time.
+- Safe recovery from malformed/failed/empty calls, repeated-call suppression and deadlines.
+- Original call IDs and full stateless replay, including reasoning, across every round.
+- Grounded-reference checks and honest uncertainty; no semantic correctness guarantee.
+- Mock/live CLI with optional traces, deterministic offline fixtures and no live fallback.
+- Mock A–D demos with real tools, protocol/state/security and existing regressions verified.
+- No new dependency, HTTP chat route, frontend, persistent memory or deployment.
+- Live verification pending until approved requests succeed; wait for commit/push approval.
