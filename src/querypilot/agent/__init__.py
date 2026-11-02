@@ -1,1 +1,1 @@
-"""Single-round model/tool orchestration; autonomous multi-step work is deferred."""
+"""Bounded multi-step orchestration and the compatible Day 6 single-round service."""

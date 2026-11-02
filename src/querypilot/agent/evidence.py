@@ -80,6 +80,8 @@ def check_answer(answer: str, traces: list) -> bool:
     }
     if not set(re.findall(DOCUMENT_CITATION, answer)) <= allowed_sources:
         return False
+    if not set(re.findall(r"\[(QP-[^\]\s]+)\]", answer)) <= allowed_sources:
+        return False
     for identifier in cited:
         trace = reliable[identifier]
         if trace.tool == "search_business_documents" and not any(
