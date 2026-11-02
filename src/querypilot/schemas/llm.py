@@ -1,4 +1,4 @@
-"""Public single-round outcomes; provider prompts/reasoning are never exposed."""
+"""Bounded execution outcomes; provider prompts/reasoning are never exposed."""
 
 from typing import Any, Literal
 
@@ -20,7 +20,8 @@ class ExecutionError(BaseModel):
 
 class ToolExecution(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    evidence_id: str = Field(pattern=r"^E[1-6]$")
+    evidence_id: str = Field(pattern=r"^E([1-9]|1[0-9]|20)$")
+    iteration: int = Field(default=1, ge=1, le=10)
     call_id: str = Field(min_length=1, max_length=200)
     tool: ToolName | None
     status: Literal["success", "error"]
@@ -38,6 +39,8 @@ class ExecutionOutcome(BaseModel):
     question: str = Field(max_length=4000)
     status: Literal["completed", "no_evidence", "error"]
     answer: str | None = Field(default=None, max_length=6000)
-    tools: list[ToolExecution] = Field(default_factory=list, max_length=6)
-    errors: list[ExecutionError] = Field(default_factory=list, max_length=8)
+    tools: list[ToolExecution] = Field(default_factory=list, max_length=20)
+    errors: list[ExecutionError] = Field(default_factory=list, max_length=21)
+    iterations: int = Field(default=0, ge=0, le=10)
+    elapsed_ms: int = Field(default=0, ge=0)
     grounding_checks: Literal["not_applicable", "passed", "failed"] = "not_applicable"

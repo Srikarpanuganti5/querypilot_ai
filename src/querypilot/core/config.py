@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     llm_max_evidence_rows: int = Field(default=10, ge=1, le=20)
     llm_max_evidence_bytes: int = Field(default=12000, ge=1000, le=32000)
     llm_total_evidence_bytes: int = Field(default=48000, ge=2000, le=128000)
+    agent_max_iterations: int = Field(default=5, ge=1, le=10)
+    agent_max_tool_calls: int = Field(default=10, ge=1, le=20)
+    agent_max_tools_per_iteration: int = Field(default=5, ge=1, le=6)
+    agent_timeout_seconds: float = Field(default=90, ge=0.01, le=300)
+    agent_max_context_bytes: int = Field(default=128000, ge=1000, le=512000)
 
     @field_validator("cors_origins")
     @classmethod
