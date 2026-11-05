@@ -46,7 +46,9 @@ its actual source citation. There is no instruction-keyword blacklist. These tes
 establish application-controlled capability boundaries, not live-model attack immunity.
 An injected instruction may still steer the model toward a different **approved** read
 operation or a misleading answer. There is no per-user authorization/tenant isolation
-layer yet; the data is public synthetic data and no chat HTTP endpoint exists.
+layer yet; the data is public synthetic data. Day 9 adds a local-development agent HTTP
+endpoint with an explicit live-mode gate. It has no authentication or rate limiting and
+must stay on loopback/private development infrastructure; it is not a public production API.
 
 ## Credential and diagnostic handling
 
@@ -166,6 +168,13 @@ cancellation tests prove that workers finish before request resource cleanup; th
 not depend on narrow elapsed-time assertions. The existing SDK MockTransport, SQL
 permission/cancellation, BM25 filesystem/search, API and Day 6/7 tests remain in use.
 No paid OpenAI request is part of the default suite.
+
+Day 9's public HTTP projection removes raw tool arguments/provider call IDs and keeps
+credential screening server-side. Streamlit never loads the backend .env or requires
+an OpenAI key. Its HTTP client validates responses and bounds bytes, disables redirects
+and automatic retries, and displays fixed diagnostics. Retrieved text is rendered as
+plain text rather than active HTML/Markdown images. User-entered unknown sensitive data
+is still outside a comprehensive anonymization guarantee; use synthetic input only.
 
 Day 8 pip-audit checked 36 installed third-party packages and found no known advisories;
 the editable local project was explicitly skipped. The audit utility ran in a temporary

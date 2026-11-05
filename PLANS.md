@@ -1,9 +1,9 @@
 # Development roadmap
 
-Days 1–7 are implemented and pushed. Day 8 strengthens secret protection, message budgets,
-cancellation/cleanup, partial/conflicting evidence handling and reliability telemetry.
-Actual verification is recorded in docs/progress.md. Live API behavior remains pending
-credentials and explicit usage approval. The user has now approved focused Day 8 commits and a push.
+Days 1–8 are implemented and pushed. Day 9 adds local Streamlit chat, a typed HTTP client,
+safe agent endpoints and a shared CLI/API lifecycle. Actual verification is recorded in
+docs/progress.md. Live API behavior remains pending credentials and explicit usage
+approval. The user has now approved focused Day 9 commits and a push.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -17,8 +17,8 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 6 | Async SDK, six strict schemas, one tool batch/follow-up, evidence bounds, CLI | Mocked SDK/protocol/error/grounding tests; actual API checks remain opt-in |
 | 7 | Bounded multi-step orchestration, state, traces and CLI | Mock A–D demos, SDK replay, limits/recovery/isolation and regressions |
 | 8 | Credential/trust boundaries, cancellation, budgets, evidence integrity and telemetry | Adversarial and prior SQL/API/provider/search regressions; dependency advisory check |
-| 9 | Streamlit interface | Chat and evidence display |
-| 10 | Broader automated tests | API, tool, and database integration coverage |
+| 9 | Local Streamlit chat and safe agent HTTP integration | API/client/AppTest, startup and actual mock HTTP/database demonstrations |
+| 10 | Expanded automated testing and integration coverage | Broader API, tool and database coverage after a new request |
 | 11 | Agent evaluations | Tool choice, factual support, injection scenarios |
 | 12 | Docker Compose | Startup and restricted credentials |
 | 13 | GitHub Actions and deployment docs | CI and reproducible setup |
@@ -114,3 +114,18 @@ No new project dependency is needed. The user has now explicitly approved
 Day 8 commits/push in six focused groups: credential safety, contracts, execution,
 CLI, tests and documentation. Day 9, after a separate request, adds the Streamlit interface using
 the established safe outcomes, tool summaries and partial/limitation indicators.
+
+## Day 9 implementation and review groups
+
+1. API/service contracts: shared lifecycle, safe ask/capabilities endpoints, public trace
+   projection, bounded request bodies, live HTTP opt-in and GET/POST CORS.
+2. Frontend/client: Streamlit chat, server-only execution, typed bounded HTTP transport,
+   fixed diagnostics, session history, evidence/metadata rendering and restrained theme.
+3. Tests: API validation/security, client protocol/error paths, Streamlit AppTest and
+   four real mock UI→HTTP→PostgreSQL/document demonstrations; preserve old regressions.
+4. Documentation: exact startup/setup, dependencies, local-only boundaries, actual results.
+
+Streamlit is the sole new direct dependency. HTTPX moves from dev-only to runtime for
+the frontend client; no additional HTTP library is needed. Prepare focused commits and
+push after the user’s explicit Day 9 approval, now received. No persistent memory,
+public hosting or Day 10 infrastructure is added.

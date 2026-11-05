@@ -1,14 +1,86 @@
 # Architecture
 
-## Current state: Day 8
+## Current state: Day 9
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
 and sanitized exception handling. Day 3 adds PostgreSQL infrastructure invoked explicitly
 by migration, seed, and verification commands. API initialization remains database-free.
 The direct OpenAI adapter and bounded multi-step service are implemented with mock/protocol
-verification; actual API verification is pending. No chat endpoint, frontend, persistent
-conversation memory, full deployment or CI is present.
+verification; actual OpenAI verification is pending. Day 9 adds Streamlit chat and an
+agent HTTP endpoint for local development. Persistent agent memory, public deployment
+and CI remain outside the implemented scope.
+
+## Frontend and agent HTTP flow
+
+```mermaid
+sequenceDiagram
+    participant U as Streamlit session
+    participant C as Typed HTTP client
+    participant API as FastAPI
+    participant S as Shared request service
+    participant A as MultiStepService
+    participant T as Approved tools
+    U->>C: Read safe capabilities (no execution)
+    C->>API: GET /api/v1/agent/capabilities
+    API-->>U: Availability flags and limits
+    U->>C: Explicit independent question and mode
+    C->>API: POST /api/v1/agent/ask
+    API->>API: Bound body, validate schema, enforce live opt-in
+    API->>S: Question, mode, backend Settings
+    S->>A: Existing provider, registry and limits
+    loop Bounded model/tool rounds
+        A->>T: Existing approved operation
+        T-->>A: Actual bounded evidence or safe error
+    end
+    A-->>S: Checked outcome with partial/limit metadata
+    S->>S: Close request-owned resources
+    S-->>API: Outcome
+    API-->>C: Public projection without arguments or provider call IDs
+    C-->>U: Validated typed result
+    U->>U: Display answer, evidence and execution details
+    Note over U,API: Display history never becomes agent memory
+```
+
+`services/agent.py` owns one request's provider/registry lifecycle and calls the existing
+MultiStepService. CLI and HTTP reuse it; orchestration is not duplicated in the frontend.
+The CLI keeps its factory injection seams for compatibility with prior security tests.
+API startup/capabilities do not construct a provider or connect to PostgreSQL.
+
+`api/routes/agent.py` exposes ask/capabilities with Pydantic contracts in schemas/agent.py.
+The POST accepts only question and mock/live mode. A streaming body middleware caps
+the request at 65536 bytes before JSON parsing; question length and existing limits
+remain in force. Live HTTP calls require backend agent_live_enabled as well as valid
+key/model configuration. This gate does not change the CLI's explicit --live behavior.
+
+Public responses retain actual typed evidence and errors, iteration/order/duration,
+partial/limitations/pending metadata, an HTTP request ID and the agent trace ID. Raw
+arguments, provider call IDs, prompts, reasoning and internal conversation items are
+omitted. Citation/trace coherence and UUID identifiers validate at the public boundary.
+Agent failures remain structured outcomes; HTTP validation/permission/unexpected errors
+use the existing safe envelope.
+
+`frontend/api_client.py` performs bounded HTTP requests with explicit connect/read
+timeouts, no redirects, inherited proxy credentials or automatic retries. It checks
+schemas and response mode before returning data. FrontendSettings reads only the API
+origin from environment and does not load backend .env settings or API keys.
+
+`frontend/app.py` keeps up to 20 displayed exchanges in Streamlit session state. Example
+buttons fill the composer, mode changes only fetch safe metadata, and an explicit
+submission queues one request. Pending state disables controls; reruns display stored
+responses without resending. Clearing affects UI history only. There is no backend
+conversation-memory API or persistent store.
+
+`frontend/components.py` renders narrative/passages as plain text, SQL rows as read-only
+tables and exact source IDs as code. It never converts retrieved HTML/images into active
+Markdown content. Errors use fixed diagnostics; the UI does not display raw exception
+or HTTP error messages. Mock/live labels and partial/conflict/grounding notices remain
+visible. .streamlit/config.toml supplies only a restrained built-in theme and loopback defaults.
+
+Both servers are local development processes, without authentication, authorization or
+rate limiting. Public deployment needs those controls and deployment hardening. CORS
+allows explicit GET/POST origins but is not authentication; Streamlit's server-side HTTP
+client does not need browser CORS. See [frontend.md](frontend.md) for startup and limitations.
 
 ## Security and reliability boundaries
 
@@ -275,7 +347,8 @@ Uvicorn entry point. Metadata uses the installed distribution's version (`0.1.0`
 health, info, and OpenAPI agree. Startup/shutdown lifespan hooks configure application
 logging and record lifecycle events. Startup does not contact any external services.
 
-`api/router.py` mounts unversioned `/health` and the info router under `/api/v1`.
+`api/router.py` mounts unversioned `/health`, info under `/api/v1`, and Day 9 ask/capabilities
+under `/api/v1/agent`.
 `api/routes/health.py` reports process liveness only. `api/routes/info.py` reports app
 metadata. `schemas/system.py` defines typed response/error contracts. FastAPI generates
 `/docs`, `/redoc`, and `/openapi.json`. Browser documentation assets use the framework's
@@ -302,7 +375,7 @@ exception messages. Uvicorn's raw access logging is disabled during startup.
 
 Outer Starlette CORS middleware decorates ordinary and sanitized error responses. No
 origins are permitted by default; configured origins must be exact HTTP(S) origins.
-Wildcard origins and credentials are disabled; only GET is advertised. Preflights use
+Wildcard origins and credentials are disabled; GET and POST are advertised. Preflights use
 the framework's standard protocol responses and may be handled before request logging.
 CORS is not authentication.
 
@@ -333,6 +406,7 @@ expose operations and evidence, not private model reasoning.
 | `src/querypilot/schemas/` | Pydantic request, response, tool-argument validation |
 | `src/querypilot/services/` | Business workflows independent of HTTP |
 | `src/querypilot/core/` | Environment configuration and shared infrastructure |
+| `src/querypilot/frontend/` | Streamlit presentation, display-only history and typed HTTP client |
 | `tests/` | Original import smoke test, API/error/logging/CORS tests, settings tests |
 | `data/sample/` | Small, publicly shareable synthetic fixtures |
 | `docs/` | Architecture and milestone progress |
@@ -346,9 +420,10 @@ for package imports rather than relying on application code at the repository ro
 
 Python 3.12 is the baseline. FastAPI, Pydantic, Pydantic Settings, and Uvicorn support the
 current backend. SQLAlchemy, Psycopg, and Alembic support the explicit database workflow.
-Pytest, Ruff, and HTTPX support development and tests. The official OpenAI SDK supports
-the current mock/protocol-verified adapter. Streamlit, full Docker deployment, and GitHub
-Actions arrive later.
+Pytest and Ruff support development/tests. HTTPX supports frontend HTTP transport and
+test clients; Streamlit supplies the current local UI. The official OpenAI SDK supports
+the current mock/protocol-verified adapter. Full Docker deployment and GitHub Actions
+arrive later.
 
 There will be no arbitrary SQL interface. Tools will accept validated business parameters
 for code-owned queries. Agent credentials will be read-only and separate from setup

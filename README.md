@@ -6,11 +6,12 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 8 security guardrails and reliability.** FastAPI, PostgreSQL, synthetic data,
+**Current status: Day 9 interactive Streamlit frontend.** FastAPI, PostgreSQL, synthetic data,
 five read-only analytics tools, document retrieval, and the direct OpenAI SDK adapter are
 implemented. The six-tool workflow is mock/protocol verified; actual live API verification
-remains pending. The agent supports repeated tool rounds; no chat endpoint or UI is implemented. Search, mock
-document demos and API health/docs work without a database or API key.
+remains pending. The local Streamlit chat calls a typed agent HTTP endpoint, with tool
+traces, evidence and limitation notices. Document demos and API health/docs work without
+a database or API key. SQL questions require the actual synthetic reader database.
 
 ## Planned features
 
@@ -42,7 +43,7 @@ services, and configuration. See [architecture](docs/architecture.md) for bounda
 | Ruff | Linting, import sorting, formatting | Day 1 development dependency |
 | FastAPI, Pydantic, Uvicorn | HTTP API, validation, server | Day 2 |
 | Pydantic Settings | Typed environment and optional `.env` configuration | Day 2 |
-| HTTPX | FastAPI TestClient HTTP transport; development only | Day 2 |
+| HTTPX | TestClient transport and frontend-to-backend HTTP client | Day 2; runtime in Day 9 |
 | PostgreSQL, SQLAlchemy, Psycopg | Database, models, driver | Day 3 |
 | Alembic | Versioned database schema migrations | Day 3 |
 | OpenAI Python SDK | Direct async Responses function calling, with bounded retries | Day 6 |
@@ -50,8 +51,8 @@ services, and configuration. See [architecture](docs/architecture.md) for bounda
 | Docker Compose, GitHub Actions | Service orchestration and CI | Later milestones |
 
 Runtime dependencies are FastAPI, Pydantic, Pydantic Settings, Uvicorn, SQLAlchemy,
-Psycopg (binary driver wheel), Alembic, and the official OpenAI SDK. Development
-dependencies are Pytest, Ruff, and HTTPX. Hatchling remains the isolated build dependency.
+Psycopg (binary driver wheel), Alembic, the official OpenAI SDK, HTTPX and Streamlit.
+Development dependencies are Pytest and Ruff. Hatchling remains the isolated build dependency.
 Other libraries will be added when used. Uvicorn's base install supports `--reload`
 through polling, so no optional watcher or event-loop packages are required.
 
@@ -101,6 +102,8 @@ OpenAPI specification work without loading those assets. `--reload` is for devel
 | --- | --- |
 | `GET /health` | Process liveness, independent of databases and providers |
 | `GET /api/v1/info` | API name, package version, description |
+| `GET /api/v1/agent/capabilities` | Safe mode availability and execution limits; no credentials |
+| `POST /api/v1/agent/ask` | Independent question in mock/live mode; safe outcomes and evidence |
 | `GET /docs` | Swagger UI |
 | `GET /redoc` | ReDoc |
 | `GET /openapi.json` | OpenAPI specification |
@@ -113,6 +116,33 @@ curl http://127.0.0.1:8000/api/v1/info
 ```
 
 `/api/v1/chat` is deliberately absent and returns 404. Health is not database readiness.
+
+## Start the interactive frontend
+
+Run both processes from the repository root in separate terminals, with `.venv` activated:
+
+```sh
+# Terminal 1 — backend; reads your local backend .env
+uvicorn querypilot.main:app --host 127.0.0.1 --port 8000
+
+# Terminal 2 — UI; only needs its API origin, not backend secrets
+QUERYPILOT_API_BASE_URL=http://127.0.0.1:8000 streamlit run src/querypilot/frontend/app.py --server.address 127.0.0.1 --server.port 8501
+```
+
+Open http://127.0.0.1:8501. Mock demo is the default and uses deterministic model fixtures
+with actual approved tools. The sidebar examples fill the composer; sending executes a
+question. Displayed history survives reruns but is never sent as agent memory. Each answer
+has execution and supporting-evidence panels, with exact citations and partial-result notices.
+
+Live mode makes paid requests only when a question is explicitly submitted. Set
+`QUERYPILOT_AGENT_LIVE_ENABLED=true`, `OPENAI_API_KEY` and `OPENAI_MODEL` in the **backend**
+environment, then restart FastAPI. Mode selection/page load never invokes the agent.
+Live failures do not fall back to mock. Live model verification is still pending.
+
+This is a **local development demonstration**, without authentication, authorization or
+rate limiting. Keep both servers on loopback. Public deployment requires those controls
+and appropriate deployment hardening. CORS is not authentication. See
+[frontend setup, API behavior and troubleshooting](docs/frontend.md).
 
 ## Configuration, errors, and logs
 
@@ -127,9 +157,9 @@ Environment variables override `.env`. Settings are validated once per process; 
 the server after changing them. `QUERYPILOT_CORS_ORIGINS` defaults to `[]`, allowing no
 cross-origin browser access. Supply exact HTTP(S) origins as a JSON array, without paths,
 credentials, query strings, fragments, or wildcards. CORS is a browser policy, not
-authentication. The current API allows GET and does not enable credentialed CORS.
+authentication. The current API allows GET/POST and does not enable credentialed CORS.
 Database settings are used by explicit database/tool commands. OpenAI settings are used
-only by explicit live ask commands. API startup never calls OpenAI, connects to PostgreSQL
+only by explicit live CLI/HTTP questions. API startup never calls OpenAI, connects to PostgreSQL
 or migrates tables.
 
 Application HTTP errors use an `error` object with `code`, `message`, `request_id`, and
@@ -371,13 +401,14 @@ See [PLANS.md](PLANS.md) for the detailed proposed sequence.
 - [docs/llm.md](docs/llm.md): Responses adapter, setup and retained Day 6 service.
 - [docs/agent.md](docs/agent.md): Day 7 loop, state, limits, recovery and CLI.
 - [docs/security.md](docs/security.md): Day 8 trust boundaries, error behavior and verification limits.
+- [docs/frontend.md](docs/frontend.md): local Streamlit setup, typed HTTP contracts, session state and UX.
 - [docs/progress.md](docs/progress.md): implementation and verification status.
 - [data/sample/](data/sample/README.md): synthetic fixture policy and developer SQL.
 
 ## Security principles
 
-The eventual agent must use approved parameterized operations, never arbitrary
-LLM-generated SQL. Tools must use restricted read-only credentials, validate inputs,
-and cap iterations, time, and results. Retrieved content must be treated as untrusted.
-These requirements will be implemented and tested with their associated features.
+The agent uses approved parameterized operations, never arbitrary LLM-generated SQL.
+Tools require restricted read-only credentials, validate inputs, and cap iterations,
+time and results. Retrieved content stays untrusted. Preserve these tested boundaries
+as new features are added.
 Only synthetic, publicly shareable data belongs in this repository.

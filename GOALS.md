@@ -26,7 +26,9 @@ answer request, with mock verification. Day 7 adds bounded multi-step orchestrat
 isolated state, repeated-call handling and context/time/tool limits. Live API validation
 remains pending. Day 8 strengthens secret protection, trust boundaries, owned worker
 cleanup, resource budgets, partial/conflicting evidence handling and safe telemetry.
-Chat endpoints and the UI remain planned.
+Day 9 adds local Streamlit chat and `/api/v1/agent/ask` with a shared server-side agent
+lifecycle, safe evidence projection and independent questions. Live verification remains
+pending. Public deployment and persistent agent memory remain outside the current scope.
 
 ## Quality and security
 
@@ -128,3 +130,17 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Adversarial tests, prior regressions and feasible dependency advisory checks reported honestly.
 - No prompt-injection immunity, semantic-grounding guarantee or live-verification claim.
 - No frontend, deployment, persistent memory or new dependencies; wait for commit/push approval.
+
+## Day 9 acceptance criteria
+
+- Local Streamlit chat uses a thin typed HTTP client and the existing server-side agent.
+- Validated POST ask and safe capabilities endpoints preserve existing API behavior.
+- No client-supplied tools, SQL, agent memory, secrets or execution-limit overrides.
+- Clearly labeled mock/live modes; live requires server opt-in and explicit submission.
+- Session-only history, clear/examples, pending-request gating and bounded recent history.
+- Actual tool metadata, SQL/document evidence, exact citations and partial/conflict/error notices.
+- No raw messages/arguments/call IDs or unsafe diagnostics in the public response.
+- API/client/AppTest and prior security/SQL/provider regressions pass; actual mock E2E
+  results distinguish real HTTP/database integration from in-memory component tests.
+- Startup commands, dependency purposes, local-only security and limitations documented.
+- No paid live verification claim; wait for commit/push approval and stop before Day 10.

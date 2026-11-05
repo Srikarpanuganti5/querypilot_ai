@@ -982,4 +982,175 @@ isolated. There is no user/tenant authorization boundary yet and no chat HTTP en
 Prepare focused commits for credential/trust safety, worker reliability, budgets/evidence/
 telemetry, tests and documentation. Commit/push approval has now been received;
 use six groups: credential safety, contracts, execution, CLI, tests and documentation. Day 9, after a new request, adds the
-Streamlit interface using these safe outcomes and limitation indicators. Day 9 has not begun.
+Streamlit interface using these safe outcomes and limitation indicators. At the close of
+Day 8, Day 9 had not begun.
+
+## Day 9 — Interactive Streamlit frontend (2026-11-05)
+
+Implementation and mock verification are complete. Git was clean on main at 3646fde,
+synchronized with origin/main. The Day 9 attachment initially required approval before
+committing/pushing. The user has now confirmed the UI works locally and explicitly
+approved focused commits and a push to the existing repository. No paid OpenAI requests, persistent agent memory,
+public hosting, authentication platform or Day 10–14 infrastructure was introduced.
+Live OpenAI integration remains unverified.
+
+### Architecture and scope
+
+The UI uses a thin typed HTTP client to call FastAPI. POST /api/v1/agent/ask accepts only
+an independent question and mock/live mode. GET /api/v1/agent/capabilities returns safe
+availability flags and limits without executing a provider or tool. The lifecycle
+previously in the CLI was moved into services/agent.py; HTTP and CLI now share resource
+creation, MultiStepService execution and cleanup. Existing CLI factory seams were retained
+so prior cancellation/security tests still exercise the same behavior.
+
+Public responses reuse ExecutionOutcome while projecting safe tool summaries/evidence.
+Raw arguments, provider call IDs, internal messages/prompts and reasoning are excluded.
+Request IDs match HTTP headers; the independent agent trace ID remains available.
+Body bytes are bounded before JSON parsing, and request schemas forbid client tools,
+SQL, memory and execution-limit overrides. All original server-side limits, credential
+checks, fixed queries and read-only privileges remain in effect. Live HTTP execution
+requires a separate backend opt-in; startup/mode/capability reads never invoke it.
+
+Streamlit keeps only display history (maximum 20 exchanges) in each UI session. A pending
+request disables submission controls, and reruns render stored results without resending.
+Examples fill the composer instead of executing. The interface renders actual tool order,
+iteration/status/timing, SQL rows, original passages/citations and limitation/error notices.
+Untrusted narrative renders as plain text, not executable HTML or Markdown images. The
+backend capability timeout plus a 15-second margin configures the HTTP client; redirects,
+inherited proxy credentials and automatic retries are disabled.
+
+### Files created and modified
+
+Created:
+
+- `api/routes/agent.py`: safe local ask/capabilities endpoints and live-mode gate.
+- `schemas/agent.py`: request, capability and public response/trace contracts, including
+  coherent citations/results and UUID identifiers.
+- `services/agent.py`: shared CLI/API request lifecycle and cleanup.
+- `frontend/__init__.py`, `frontend/app.py`: dedicated presentation package and chat UI.
+- `frontend/api_client.py`, `frontend/config.py`, `frontend/messages.py`: bounded typed
+  HTTP transport, frontend-only environment configuration and fixed safe diagnostics.
+- `frontend/components.py`: answer/execution/evidence rendering with explicit limitations.
+- `.streamlit/config.toml`: built-in light theme, loopback defaults and disabled usage stats.
+- `tests/conftest.py`: public response fixture using real mock document execution.
+- `tests/test_agent_api.py`, `tests/test_frontend_client.py`, `tests/test_frontend_app.py`:
+  20 backend, 16 client and 15 Streamlit cases respectively (**51 new cases**).
+- `docs/frontend.md`: exact startup, contracts, modes, session behavior and troubleshooting.
+
+Modified:
+
+- `agent/cli.py`: delegates lifecycle to the shared service; keeps existing commands/modes.
+- `api/router.py`, `api/middleware.py`, `main.py`: mount routes, cap streamed agent bodies
+  at 65536 bytes before parsing and advertise GET/POST for explicit CORS origins.
+- `core/config.py`, `.env.example`: disabled-by-default agent_live_enabled and UI API origin.
+- `pyproject.toml`, `uv.lock`: Streamlit runtime dependency; HTTPX promoted from dev-only
+  to runtime for the UI client. No second HTTP library or new agent framework.
+- `tests/test_api.py`: OpenAPI path inventory now includes the two intentional new routes.
+- README, AGENTS, GOALS, PLANS, architecture/agent/security guides and this progress log.
+
+The sole new direct library is `streamlit>=1.49,<2`, resolved to **1.67.0**. HTTPX remains
+0.28.1. uv resolved **62 packages**, installing 23 third-party additions transitively with
+Streamlit and rebuilding the editable project. Dependency purposes and startup commands
+are documented. SQL builders, models/migrations, registry/guardrail/retrieval code and
+the existing agent/provider implementation remain unchanged; CLI lifecycle logic moved
+without duplicating orchestration in the frontend.
+
+### Actual verification results
+
+The existing Python 3.12.15 environment and PostgreSQL fixture on port 55438 were usable;
+no runtime or database repair was needed. Dependencies were synchronized using temporary
+uv tooling and a fresh temporary cache. No real key was read into frontend settings.
+
+| Command/check | Actual result |
+| --- | --- |
+| `uv sync --python 3.12 --extra dev` with the temporary cache | Passed; 62 packages resolved; Streamlit 1.67.0 installed. |
+| First full independent regression run | One expected failure: the old OpenAPI test asserted only the two Day 2 paths. Its inventory was updated for the new routes. Other existing cases passed/skipped as expected. |
+| `pytest -q tests/test_agent_api.py` | **20 passed** in 0.61s. |
+| Client and initial UI tests | 27 passed before four final UI evidence/error cases were added. |
+| Final new API/client/UI subset | **51 passed**, 1 existing dependency warning, in 2.19s. |
+| Final full suite with both PostgreSQL test URLs | **352 passed**, 1 warning, in 8.88s; all 32 PostgreSQL cases executed. |
+| Final full suite without database test settings | **320 passed, 32 skipped**, 1 warning, in 4.04s. |
+| `ruff check .` | Passed. |
+| `ruff format --check .` | Passed; 91 files already formatted. |
+| Offline `uv lock --check` | Passed; 62 packages, current lockfile. |
+| Document-search evaluation | 20 cases, 10 documents/40 chunks; Hit Rate@5=1.0, MRR@5=1.0 unchanged. |
+| Existing FastAPI health/info/docs/redoc/OpenAPI over real HTTP | All HTTP 200. |
+| Streamlit root and /_stcore/health | HTTP 200, including after restarting with the matching backend URL. |
+| Four real mock end-to-end AppTest scenarios | All completed; 8 chat messages, 2 SQL tables, 3 source citations and zero rendering exceptions. |
+| Live OpenAI calls | Not performed; test backend explicitly disabled live and had no key/model. |
+| Public deployment/auth/rate-limit/browser pixel review | Not performed; outside Day 9's local demo verification. |
+
+Existing FastAPI/Starlette HTTPX deprecation warnings remain nonfatal. AppTest emitted
+its known missing-ScriptRunContext warning when launched by the temporary external
+verification script; rendering checks passed. Initial Ruff checks caught import order
+and long UI strings, corrected before final checks. The first temporary E2E script used
+a relative AppTest path resolved under /private/tmp and failed before rendering; changing
+it to the absolute repository app path fixed the harness. No application assertion failed
+in the final new API/client/UI tests. This is automated element rendering, not a manual
+browser layout/pixel review.
+
+Full PostgreSQL regression command:
+
+```sh
+TEST_DATABASE_URL=postgresql+psycopg://querypilot_admin@127.0.0.1:55438/querypilot_day8_verify TEST_READER_DATABASE_URL=postgresql+psycopg://querypilot_reader@127.0.0.1:55438/querypilot_day8_verify .venv/bin/python -m pytest -q --tb=short
+```
+
+Focused command:
+
+```sh
+.venv/bin/python -m pytest -q tests/test_agent_api.py tests/test_frontend_client.py tests/test_frontend_app.py --tb=short
+```
+
+### Actual startup and full-path demonstration
+
+Verification started real loopback servers using the repository entry points:
+
+```sh
+READER_DATABASE_URL=postgresql+psycopg://querypilot_reader@127.0.0.1:55438/querypilot_day8_verify QUERYPILOT_AGENT_LIVE_ENABLED=false OPENAI_API_KEY= OPENAI_MODEL= .venv/bin/uvicorn querypilot.main:app --host 127.0.0.1 --port 58009 --no-access-log
+QUERYPILOT_API_BASE_URL=http://127.0.0.1:58009 .venv/bin/streamlit run src/querypilot/frontend/app.py --server.address 127.0.0.1 --server.port 58509 --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false
+```
+
+The temporary Streamlit server was initially started without the test API origin, then
+restarted with the matching URL above. Root/health were checked successfully afterward.
+Both temporary web servers were stopped cleanly after verification; the pre-existing
+synthetic PostgreSQL instance was left running. Standard user-facing commands use ports
+8000/8501 and are documented in README and docs/frontend.md.
+
+AppTest then used the **real frontend ApiClient without mocking network calls**, the real
+FastAPI server, existing MultiStepService and actual synthetic SQL/document tools:
+
+| Submitted question | Actual tool sequence | Evidence/UI result |
+| --- | --- | --- |
+| What are our top five products by revenue? | get_top_products(limit=5) | Two iterations; real top-five table and E1, partial/selected-record notice. |
+| What is our return policy? | search_business_documents(query="product return window", top_k=1) | Two iterations; 30-day passage and QP-RET-001#s002-c001. |
+| Which products generated the most revenue, and what is our refund policy? | get_top_products → search_business_documents | Three iterations; actual SQL rows and E2 policy citation, limitation notice. |
+| How are failed payments handled? | search_business_documents(query="failed payments and retries", top_k=1) | Two iterations; actual policy and QP-PAY-003#s002-c001. |
+
+The top SQL row was Outdoors Product 064, USD **37,882.39**, followed by the same four
+fixture products from prior milestones. Rendering asserted that value directly in the
+table. All four responses identified mock mode and passed mechanical reference checks.
+No fake SQL rows or in-memory transport replaced the database path in this demonstration.
+Component tests separately use synthetic fixture rows/in-memory transports as documented.
+
+### Security and limitations
+
+Tests cover streamed body limits before parsing, strict questions/modes/extra fields,
+live opt-in and missing configuration without fallback, safe secret/error serialization,
+limit failures with retained evidence, client construction/parsing/timeouts/no retries,
+malformed/oversized/redirected responses and invented citations. AppTest covers startup,
+examples, clear/history/reruns, mode selection without execution, disabled busy controls,
+missing backend/live configuration, safe retryable errors, SQL tables, exact citations,
+partial/conflicting/empty results and inert untrusted HTML/image-looking text. Existing
+Day 6–8 security/cancellation/provider and real SQL permission/timeout regressions passed.
+
+This is local-only functionality without authentication, authorization or rate limiting;
+do not present it as a public production endpoint. A UI timeout/disconnect does not prove
+backend cancellation, and cleanup may exceed the HTTP margin. There is no automatic retry
+or cross-client idempotency; manually resubmitting a live request may incur another charge.
+Display history is not persistent memory and is lost on session reset. Secret screening,
+reference checks and deterministic mock selection retain their documented limitations.
+Actual live OpenAI selection/schema/answer behavior remains pending approved verification.
+
+No Day 9 implementation blocker remains. Prepare focused service/contracts, API, frontend/
+client, tests and documentation commits. Commit/push approval has now been received. Day 10 preview is Expanded
+Automated Testing and Integration Coverage; it has not been started.

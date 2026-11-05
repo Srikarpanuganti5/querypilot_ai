@@ -7,7 +7,9 @@ function calling. Day 7 adds bounded multi-step orchestration with isolated requ
 Keep the Day 6 SingleRoundService compatible; both ask CLIs now use MultiStepService.
 Day 8 strengthens secret screening, provider error safety, worker cancellation/cleanup,
 message budgets, partial/conflicting evidence reporting and correlated telemetry.
-No chat HTTP endpoint, UI, persistent memory or deployment is part of Day 8.
+Day 9 adds local Streamlit chat, a safe agent HTTP endpoint and a shared CLI/API request
+lifecycle. Keep orchestration server-side; frontend state is display history only.
+No persistent agent memory, public deployment or Day 10–14 features are part of Day 9.
 Read GOALS.md, PLANS.md,
 docs/architecture.md, and docs/progress.md before changing scope. Stop after the
 requested milestone; later milestones require a new request. User instructions
@@ -88,4 +90,11 @@ CLI cleanup, adversarial tests, and documentation. Preserve registry and
 read-only SQL boundaries. Drain owned tool workers before resource cleanup, propagate
 cancellation, and never log raw provider exceptions or secret-bearing payloads. Do not
 describe deterministic adversarial tests or dependency checks as a formal security audit.
-Stop after Day 8; do not begin the Day 9 frontend without a separate request.
+Day 8 was completed and pushed in six focused commits.
+
+The user has now explicitly approved committing and pushing Day 9 to the existing
+repository. Use five focused commits: shared lifecycle, API/contracts, frontend/client,
+tests, and documentation. Live API usage remains separately unapproved. Keep local servers
+on loopback; the HTTP agent endpoint has no authentication/rate limiting and is not a
+public production service. Do not run live requests on startup, mode changes or reruns.
+Stop after Day 9 verification. Day 10 requires a separate request.

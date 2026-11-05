@@ -1,4 +1,4 @@
-# Multi-step orchestration and guardrails (Days 7–8)
+# Multi-step orchestration, guardrails and UI (Days 7–9)
 
 MultiStepService repeatedly consumes provider output, executes approved registry calls
 and returns bounded evidence until an answer or limit. Live selection is model-driven;
@@ -177,5 +177,29 @@ SQL/document orders, batching, recovery, repeated calls, deadlines, limits, stat
 isolation, CLI options and safe logs. The real SDK uses in-memory HTTP transport to
 verify three-round replay and exact IDs without a network request. Day 6 tests still
 exercise the retained service. Actual A–D demonstration details and counts are in
-[progress.md](progress.md). No frontend, persistent memory, new HTTP route, dependency
-or deployment infrastructure was added.
+[progress.md](progress.md). Days 7–8 added no frontend, persistent memory, new HTTP route,
+dependency or deployment infrastructure; Day 9 integration is described below.
+
+## Day 9 frontend integration
+
+The current Streamlit UI submits each question through POST /api/v1/agent/ask using a
+typed HTTP client. The new services/agent.py contains the request lifecycle previously
+owned by the CLI. Both entry points reuse it and the same MultiStepService, registry,
+credential screening, evidence checks and cleanup. No orchestration runs in Streamlit.
+
+The public response extends ExecutionOutcome with the HTTP request_id and a projected
+tool trace that excludes arguments/provider call IDs. It retains actual evidence, citation
+IDs, order, iteration, status, known tool duration and partial/limitation metadata.
+Durations that do not exist are omitted from display. Tool failures and empty results
+remain distinct; failed grounding/conflicting evidence does not produce a verified answer.
+
+History exists only in the UI session, is bounded to 20 exchanges and is not sent as
+memory. Live requests require backend QUERYPILOT_AGENT_LIVE_ENABLED=true plus configured
+key/model, and an explicit live-mode question submission. Startup and mode/example
+selection do not execute the agent. There is no automatic retry or mock fallback.
+The CLI --live opt-in remains independently available as before.
+
+The HTTP read timeout is the advertised server execution budget plus 15 seconds, with
+a 3-second connection timeout. Worker cleanup can exceed that margin; a UI timeout does
+not prove the backend stopped. Read [frontend.md](frontend.md) before retrying a paid
+request. No authentication/rate limiting or public-deployment claim is included in Day 9.
