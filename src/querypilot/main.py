@@ -25,7 +25,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        configure_logging(config.log_level)
+        configure_logging(config.log_level, settings=config)
         logger.info("application_started")
         try:
             yield

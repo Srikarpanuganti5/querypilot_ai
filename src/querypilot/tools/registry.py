@@ -8,6 +8,7 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from querypilot.core.config import Settings
+from querypilot.core.security import SecretGuard
 from querypilot.db.analytics import AnalyticsRepository, UnsafeDatabaseError
 from querypilot.db.session import DatabaseError, create_database
 from querypilot.schemas.analytics import (
@@ -72,6 +73,7 @@ class ToolRegistry:
         self._repository = repository
         self._document_index = document_index
         self._settings = settings
+        self._guard = SecretGuard(settings if settings is not None else Settings())
 
     def definitions(self) -> dict[str, dict[str, Any]]:
         return {
@@ -122,6 +124,12 @@ class ToolRegistry:
                         output = {"rows": rows, "truncated": truncated}
                     try:
                         data = definition.output_schema.model_validate(output)
+                        if self._guard.contains(data.model_dump(mode="json")):
+                            data = None
+                            error = ToolError(
+                                code="sensitive_output",
+                                message="Credential-like tool content was withheld.",
+                            )
                     except ValidationError:
                         error = ToolError(
                             code="invalid_output", message="Tool result failed validation."

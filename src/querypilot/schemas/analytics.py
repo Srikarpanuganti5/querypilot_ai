@@ -160,6 +160,7 @@ class ToolError(Contract):
         "invalid_output",
         "internal_error",
         "document_error",
+        "sensitive_output",
     ]
     message: str
 

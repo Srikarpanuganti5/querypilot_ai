@@ -15,6 +15,27 @@ from openai import (
 
 from querypilot.core.config import Settings
 
+SAFE_ERRORS = {
+    "configuration_error": "Set OPENAI_API_KEY and OPENAI_MODEL for live mode.",
+    "authentication_error": "OpenAI authentication failed.",
+    "rate_limit": "OpenAI rate limit reached; retry later.",
+    "provider_timeout": "The model request timed out.",
+    "network_error": "The model provider could not be reached.",
+    "provider_error": "The model provider rejected the request.",
+    "provider_response_error": "The model response was malformed or exceeded its limits.",
+    "tool_limit": "The tool-call limit was reached; narrow the question.",
+    "unexpected_tool_call": "The answer request attempted another tool round.",
+    "context_limit": "Accumulated agent context exceeded its limit.",
+    "message_limit": "The model-facing message count exceeded its limit.",
+    "grounding_error": "Answer failed evidence checks; inspect the tool results.",
+    "evidence_limit": "Accumulated tool evidence exceeded its limit.",
+    "evidence_conflict": "Retrieved records conflict; no combined factual answer is available.",
+    "iteration_limit": "The agent iteration limit was reached.",
+    "tool_timeout": "Agent stopped after a tool deadline.",
+    "sensitive_input": "The question contains credential-like content; remove it and retry.",
+    "sensitive_output": "Credential-like or private instruction content was withheld.",
+}
+
 
 @dataclass(frozen=True)
 class ProviderTurn:
@@ -24,8 +45,9 @@ class ProviderTurn:
 
 class ProviderError(Exception):
     def __init__(self, code: str, message: str):
-        super().__init__(message)
-        self.code = code
+        # Treat even custom/injected provider exceptions as untrusted diagnostics.
+        self.code = code if code in SAFE_ERRORS else "provider_error"
+        super().__init__(SAFE_ERRORS[self.code])
 
 
 class ModelProvider(Protocol):
@@ -87,6 +109,8 @@ class OpenAIProvider:
             raise ProviderError(
                 "provider_error", "The model provider rejected the request."
             ) from None
+        except Exception:
+            raise ProviderError("provider_error", "Unexpected provider failure.") from None
         if response.status != "completed":
             raise ProviderError("provider_response_error", "The model response was not completed.")
         try:

@@ -27,7 +27,7 @@ def main() -> None:
     try:
         arguments = json.loads(args.arguments)
         settings = Settings()
-        configure_logging(settings.log_level)
+        configure_logging(settings.log_level, settings=settings)
         registry = create_registry(settings)
         result = registry.execute(args.tool, arguments)
         print(result.model_dump_json())
