@@ -11,9 +11,11 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from querypilot.agent.evidence import bound_result, check_answer, has_evidence, packet
+from querypilot.agent.execution import run_tool
 from querypilot.agent.provider import ModelProvider, ProviderError, ProviderTurn
 from querypilot.agent.tool_schemas import function_schemas, normalize_arguments
 from querypilot.core.config import Settings
+from querypilot.core.security import SecretGuard
 from querypilot.schemas.llm import ExecutionError, ExecutionOutcome, Question, ToolExecution
 from querypilot.tools.registry import ToolRegistry
 
@@ -58,6 +60,8 @@ def _json_object(raw: str) -> dict[str, Any]:
 
 
 def _calls(turn: ProviderTurn, maximum: int) -> list[dict]:
+    if not isinstance(turn.text, str) or len(turn.text) > 6000:
+        raise ProviderError("provider_response_error", "Oversized or invalid answer text.")
     if not isinstance(turn.output, list) or len(turn.output) > 64:
         raise ProviderError("provider_response_error", "Invalid provider output structure.")
     if len(json.dumps(turn.output).encode()) > 128000:
@@ -71,7 +75,13 @@ def _calls(turn: ProviderTurn, maximum: int) -> list[dict]:
         ):
             raise ProviderError("provider_response_error", "Unsupported provider output item.")
         if item["type"] != "function_call":
+            if item["type"] == "message" and item.get("role") != "assistant":
+                raise ProviderError("provider_response_error", "Untrusted message authority.")
+            if item["type"] != "message" and "role" in item:
+                raise ProviderError("provider_response_error", "Untrusted item authority.")
             continue
+        if "role" in item:
+            raise ProviderError("provider_response_error", "Untrusted call authority.")
         identifier = item.get("call_id")
         if (
             not isinstance(identifier, str)
@@ -94,13 +104,30 @@ def _calls(turn: ProviderTurn, maximum: int) -> list[dict]:
 class SingleRoundService:
     def __init__(self, provider: ModelProvider, registry: ToolRegistry, settings: Settings):
         self.provider, self.registry, self.settings = provider, registry, settings
+        self.guard = SecretGuard(settings)
 
     async def _respond(
         self, instructions: str, history: list[dict], tools: list[dict], *, final: bool = False
     ) -> ProviderTurn:
         try:
+            if self.guard.contains(history):
+                raise ProviderError("sensitive_input", "Sensitive context rejected.")
             async with asyncio.timeout(self.settings.llm_request_timeout_seconds):
-                return await self.provider.respond(instructions, history, tools, final=final)
+                turn = await self.provider.respond(instructions, history, tools, final=final)
+            calls = _calls(turn, 64)  # Bound output before screening/replay.
+            if self.guard.contains(turn.output) or self.guard.contains(turn.text):
+                raise ProviderError("sensitive_output", "Sensitive provider output rejected.")
+            for call in calls:
+                try:
+                    decoded = _json_object(call["arguments"])
+                except (ValueError, TypeError, RecursionError):
+                    continue  # Existing tool boundary reports invalid JSON safely.
+                if self.guard.contains(decoded):
+                    raise ProviderError("sensitive_output", "Sensitive arguments rejected.")
+            # Supplemental exact-copy check, not a semantic prompt-leak detector.
+            if any(line in turn.text for line in instructions.splitlines() if len(line) >= 60):
+                raise ProviderError("sensitive_output", "Private instructions withheld.")
+            return turn
         except TimeoutError:
             raise ProviderError("provider_timeout", "The model request timed out.") from None
 
@@ -122,9 +149,14 @@ class SingleRoundService:
             if error is None:
                 try:
                     async with asyncio.timeout(self.settings.llm_tool_timeout_seconds):
-                        result = await asyncio.to_thread(
-                            self.registry.execute, call["name"], arguments
+                        result = await run_tool(self.registry.execute, call["name"], arguments)
+                    if self.guard.contains(result.model_dump(mode="json")):
+                        result = None
+                        error = ExecutionError(
+                            code="sensitive_output",
+                            message="Credential-like tool content was withheld.",
                         )
+                        raise ValueError("Sensitive evidence")
                     result, output, truncated = bound_result(
                         result, identifier, self.settings.llm_max_evidence_rows, budget
                     )
@@ -139,7 +171,7 @@ class SingleRoundService:
                     )
                 except (ValueError, ValidationError):
                     result = None
-                    error = ExecutionError(
+                    error = error or ExecutionError(
                         code="evidence_limit", message="Tool evidence exceeded its limit."
                     )
         if error is not None and (
@@ -204,6 +236,9 @@ class SingleRoundService:
                 ],
             )
         try:
+            if self.guard.contains(question):
+                question = self.guard.redact(question)[:4000]
+                raise ProviderError("sensitive_input", "Sensitive question rejected.")
             definitions = self.registry.definitions()
             tools = function_schemas(definitions)
             instructions = INSTRUCTIONS + f"\nCurrent UTC date: {datetime.now(UTC).date()}."

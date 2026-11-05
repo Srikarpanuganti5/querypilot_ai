@@ -3,11 +3,18 @@
 import asyncio
 import json
 import logging
+import time
 from datetime import UTC, datetime
 
 from pydantic import ValidationError
 
-from querypilot.agent.evidence import check_answer, has_evidence, packet
+from querypilot.agent.evidence import (
+    check_answer,
+    evidence_conflicts,
+    evidence_limitations,
+    has_evidence,
+    packet,
+)
 from querypilot.agent.orchestrator import INSTRUCTIONS, SingleRoundService, _calls, _json_object
 from querypilot.agent.provider import ProviderError
 from querypilot.agent.state import AgentState
@@ -30,6 +37,8 @@ def encoded_size(value: object) -> int:
 class MultiStepService(SingleRoundService):
     def _context(self, instructions: str, tools: list[dict], messages: list[dict]) -> None:
         # Count complete serialized application context, including schemas/instructions.
+        if len(messages) > self.settings.agent_max_messages:
+            raise ProviderError("message_limit", "Too many model-facing messages.")
         if encoded_size({"instructions": instructions, "tools": tools, "input": messages}) > (
             self.settings.agent_max_context_bytes
         ):
@@ -55,6 +64,13 @@ class MultiStepService(SingleRoundService):
             turn = await self._respond(instructions, state.messages, tools)
             calls = _calls(turn, self.settings.agent_max_tools_per_iteration)
             self._context(instructions, tools, state.messages + turn.output)
+            if (
+                len(state.messages) + len(turn.output) + len(calls)
+                > self.settings.agent_max_messages
+            ):
+                raise ProviderError(
+                    "message_limit", "The batch cannot fit its tool-result messages."
+                )
             if not calls:
                 if not any(has_evidence(trace.result) for trace in state.tools):
                     message = (
@@ -68,15 +84,27 @@ class MultiStepService(SingleRoundService):
                         "grounding_error",
                         "Answer failed evidence checks; inspect the tool results.",
                     )
-                return "completed", turn.text.strip(), "passed"
+                answer = turn.text.strip()
+                if evidence_limitations(state.tools):
+                    answer = (
+                        "Evidence is incomplete or limited to selected records; "
+                        "inspect the tool limitations.\n" + answer
+                    )
+                if len(answer) > 6000:
+                    raise ProviderError(
+                        "grounding_error", "Answer and limitation notice exceed the answer budget."
+                    )
+                return "completed", answer, "passed"
             if len(state.tools) + len(calls) > self.settings.agent_max_tool_calls:
                 raise ProviderError("tool_limit", "The total tool-call limit was reached.")
             if any(call["call_id"] in state.call_ids for call in calls):
                 raise ProviderError("provider_response_error", "A tool-call ID was reused.")
             # Validate the entire batch before executing any of it.
             state.call_ids.update(call["call_id"] for call in calls)
+            state.pending_tool_calls = len(calls)
             state.messages.extend(turn.output)
             for call in calls:
+                tool_started = time.monotonic()
                 identifier = f"E{len(state.tools) + 1}"
                 try:
                     fingerprint = self._fingerprint(call, definitions)
@@ -111,6 +139,20 @@ class MultiStepService(SingleRoundService):
                     )
                 trace.iteration = iteration
                 state.tools.append(trace)
+                state.pending_tool_calls -= 1
+                logger.info(
+                    "agent_tool_execution",
+                    extra={
+                        "trace_id": state.request_id,
+                        "mode": self.provider.mode,
+                        "tool": trace.tool or "unknown",
+                        "status": trace.status,
+                        "iteration_count": iteration,
+                        "tool_count": len(state.tools),
+                        "duration_ms": int((time.monotonic() - tool_started) * 1000),
+                        "error_category": trace.error.code if trace.error else None,
+                    },
+                )
                 if trace.error:
                     state.errors.append(trace.error)
                 state.evidence_bytes += len(output.encode("utf-8"))
@@ -125,6 +167,8 @@ class MultiStepService(SingleRoundService):
                 }
                 self._context(instructions, tools, state.messages + [message])
                 state.messages.append(message)
+                if evidence_conflicts(state.tools):
+                    raise ProviderError("evidence_conflict", "Conflicting evidence.")
                 if timed_out:
                     # Do not overlap additional work with a synchronous worker still running.
                     raise ProviderError("tool_timeout", "Agent stopped after a tool deadline.")
@@ -135,6 +179,9 @@ class MultiStepService(SingleRoundService):
         answer, checks = None, "not_applicable"
         try:
             state.question = Question(question=question).question
+            if self.guard.contains(state.question):
+                state.question = self.guard.redact(state.question)[:4000]
+                raise ProviderError("sensitive_input", "Sensitive question rejected.")
             async with asyncio.timeout(self.settings.agent_timeout_seconds):
                 state.status, answer, checks = await self._loop(state)
         except ValidationError:
@@ -162,16 +209,14 @@ class MultiStepService(SingleRoundService):
                     code="execution_error", message="The analytics request could not be completed."
                 )
             )
-        logger.info(
-            "llm_execution",
-            extra={
-                "trace_id": state.request_id,
-                "mode": self.provider.mode,
-                "status": state.status,
-                "tool_count": len(state.tools),
-                "duration_ms": state.elapsed_ms,
-            },
-        )
+        except asyncio.CancelledError:
+            state.status = "cancelled"
+            self._log(state, "request_cancelled")
+            raise
+        limitations = evidence_limitations(state.tools)
+        if state.status == "error" and state.tools:
+            limitations.append("execution_stopped")
+        self._log(state, state.errors[-1].code if state.errors else None)
         return ExecutionOutcome(
             trace_id=state.request_id,
             mode=self.provider.mode,
@@ -183,4 +228,23 @@ class MultiStepService(SingleRoundService):
             iterations=state.iteration,
             elapsed_ms=state.elapsed_ms,
             grounding_checks=checks,
+            partial=bool(limitations),
+            limitations=limitations,
+            pending_tool_calls=state.pending_tool_calls,
+        )
+
+    def _log(self, state: AgentState, error: str | None) -> None:
+        logger.info(
+            "llm_execution",
+            extra={
+                "trace_id": state.request_id,
+                "mode": self.provider.mode,
+                "status": state.status,
+                "tool_count": len(state.tools),
+                "duration_ms": state.elapsed_ms,
+                "iteration_count": state.iteration,
+                "error_category": error,
+                "limit_reason": error if error and error.endswith(("_limit", "_timeout")) else None,
+                "pending_tool_calls": state.pending_tool_calls,
+            },
         )
