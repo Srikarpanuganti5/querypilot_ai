@@ -3,71 +3,41 @@
 import argparse
 import asyncio
 import json
-import logging
 from uuid import uuid4
 
 from pydantic import ValidationError
 
 from querypilot.agent.mock import MultiStepMockProvider
-from querypilot.agent.multistep import MultiStepService
-from querypilot.agent.provider import OpenAIProvider, ProviderError
+from querypilot.agent.provider import OpenAIProvider
 from querypilot.core.config import Settings
 from querypilot.core.logging import configure_logging
 from querypilot.core.security import SecretGuard
 from querypilot.schemas.llm import ExecutionError, ExecutionOutcome
+from querypilot.services.agent import execute_question
 from querypilot.tools.registry import create_registry
 
 
 async def ask(question: str, *, live: bool, limits: dict | None = None) -> ExecutionOutcome:
-    provider, registry, outcome = None, None, None
     try:
         settings = Settings(**limits) if limits else Settings()
-        configure_logging(settings.log_level, settings=settings)
-        provider = OpenAIProvider(settings) if live else MultiStepMockProvider()
-        registry = create_registry(settings)
-        outcome = await MultiStepService(provider, registry, settings).run(question)
-    except (ProviderError, ValidationError) as exc:
-        outcome = ExecutionOutcome(
+    except ValidationError:
+        return ExecutionOutcome(
             trace_id=str(uuid4()),
             mode="live" if live else "mock",
             question="",
             status="error",
             errors=[
-                ExecutionError(
-                    code=exc.code if isinstance(exc, ProviderError) else "configuration_error",
-                    message=str(exc)
-                    if isinstance(exc, ProviderError)
-                    else "Invalid application settings.",
-                )
+                ExecutionError(code="configuration_error", message="Invalid application settings.")
             ],
         )
-    finally:
-        try:
-            if provider is not None:
-                await provider.close()
-        except Exception:
-            if outcome is not None:
-                outcome.status, outcome.answer = "error", None
-                outcome.errors = outcome.errors[:20] + [
-                    ExecutionError(code="cleanup_error", message="Provider cleanup failed.")
-                ]
-            logging.getLogger("querypilot.llm").error(
-                "cleanup_failed", extra={"error_category": "cleanup_error"}
-            )
-        finally:
-            if registry is not None:
-                try:
-                    registry.close()
-                except Exception:
-                    if outcome is not None:
-                        outcome.status, outcome.answer = "error", None
-                        outcome.errors = outcome.errors[:20] + [
-                            ExecutionError(code="cleanup_error", message="Tool cleanup failed.")
-                        ]
-                    logging.getLogger("querypilot.llm").error(
-                        "cleanup_failed", extra={"error_category": "cleanup_error"}
-                    )
-    return outcome
+    configure_logging(settings.log_level, settings=settings)
+    return await execute_question(
+        question,
+        live=live,
+        settings=settings,
+        provider_factory=lambda config: OpenAIProvider(config) if live else MultiStepMockProvider(),
+        registry_factory=create_registry,
+    )
 
 
 def main(arguments: list[str]) -> None:
