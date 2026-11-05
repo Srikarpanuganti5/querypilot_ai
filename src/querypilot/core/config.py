@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     agent_timeout_seconds: float = Field(default=90, ge=0.01, le=300)
     agent_max_context_bytes: int = Field(default=128000, ge=1000, le=512000)
     agent_max_messages: int = Field(default=128, ge=2, le=256)
+    agent_live_enabled: bool = False
 
     @field_validator("cors_origins")
     @classmethod

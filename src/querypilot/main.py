@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException
 
 from querypilot.api.errors import http_error, internal_error, validation_error
-from querypilot.api.middleware import RequestLoggingMiddleware
+from querypilot.api.middleware import AgentBodyLimitMiddleware, RequestLoggingMiddleware
 from querypilot.api.router import router
 from querypilot.core.config import Settings, get_settings
 from querypilot.core.logging import configure_logging
@@ -50,13 +50,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             500: {"model": ErrorResponse},
         },
     )
+    application.add_middleware(AgentBodyLimitMiddleware)
     application.add_middleware(RequestLoggingMiddleware)
     # Outer CORS middleware also decorates the sanitized 500 responses.
     application.add_middleware(
         CORSMiddleware,
         allow_origins=config.allowed_origins,
         allow_credentials=False,
-        allow_methods=["GET"],
+        allow_methods=["GET", "POST"],
         allow_headers=["Accept", "Content-Type"],
         expose_headers=["X-Request-ID"],
     )
