@@ -24,7 +24,9 @@ registry. Day 5 adds local BM25 retrieval with citations as the sixth approved t
 Day 6 adds the official OpenAI Responses adapter and one bounded tool batch plus a final
 answer request, with mock verification. Day 7 adds bounded multi-step orchestration,
 isolated state, repeated-call handling and context/time/tool limits. Live API validation
-remains pending. Chat endpoints and the UI remain planned.
+remains pending. Day 8 strengthens secret protection, trust boundaries, owned worker
+cleanup, resource budgets, partial/conflicting evidence handling and safe telemetry.
+Chat endpoints and the UI remain planned.
 
 ## Quality and security
 
@@ -113,3 +115,16 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Mock A–D demos with real tools, protocol/state/security and existing regressions verified.
 - No new dependency, HTTP chat route, frontend, persistent memory or deployment.
 - Live verification pending until approved requests succeed; wait for commit/push approval.
+
+## Day 8 acceptance criteria
+
+- Layered trust boundaries, fixed tools/SQL and deterministic malicious-content tests.
+- Credential screening before model replay, safe traces/CLI/logs and canonical provider errors.
+- Strict input/output validation, consistent document IDs/citations and no extra tool authority.
+- Owned synchronous worker cleanup, propagated cancellation, safe partial batches and no tool retries.
+- Bounded raw questions, message counts, context/evidence, calls, iterations and deadlines.
+- Explicit partial-result metadata, truncated-evidence notices and scoped conflict rejection.
+- Correlated request/tool/status/iteration/error/limit telemetry without prompts or record bodies.
+- Adversarial tests, prior regressions and feasible dependency advisory checks reported honestly.
+- No prompt-injection immunity, semantic-grounding guarantee or live-verification claim.
+- No frontend, deployment, persistent memory or new dependencies; wait for commit/push approval.

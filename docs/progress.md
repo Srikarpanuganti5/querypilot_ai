@@ -785,4 +785,201 @@ Duplicate suppression also prevents identical transient-failure retries within o
 
 Approved focused commit groups: limits/state/contracts; loop/evidence checks;
 CLI/mock; tests; documentation. Day 8 preview is Advanced Guardrails and Reliability,
-including broader adversarial and failure-path evaluation. Day 8 has not been started.
+including broader adversarial and failure-path evaluation. At the close of Day 7,
+Day 8 had not been started.
+
+## Day 8 — Advanced security guardrails and reliability (2026-11-04)
+
+Implementation and deterministic verification are complete. Git was clean on main,
+synchronized with origin/main at a985adb, before changes. Day 8 explicitly requires
+approval before committing/pushing. The user has now explicitly approved focused
+commits and a push to the existing repository. No frontend,
+deployment infrastructure, persistent memory, new business tool or HTTP route was added.
+Actual OpenAI verification remains pending: key/model were unconfigured and no paid
+API usage was authorized or performed. No formal security audit or penetration test
+was performed.
+
+### Gap analysis and implementation
+
+Existing protections were preserved: six fixed operations, strict Pydantic schemas,
+predefined SQLAlchemy queries, separately configured restricted reader credentials,
+per-call privilege audits, read-only transactions, native DB deadlines, bounded local
+ingestion, request-local agent state, call/iteration/time/byte caps and citation checks.
+
+The review found gaps in application-controlled paths:
+
+- Credentials could appear in otherwise-valid product/passage text, a provider diagnostic
+  or a verbose trace. SecretStr settings alone did not protect those data paths.
+- Thread await cancellation could abandon a still-running tool and let CLI cleanup race it.
+- Context had byte caps without an independent message-count cap; raw question length
+  was not checked before whitespace normalization.
+- Citation syntax did not enforce document-ID correspondence/uniqueness, and repeated
+  row/passage identities could carry conflicting values across rounds.
+- Limited evidence could produce a completed answer without an application-generated
+  notice; tool telemetry lacked request correlation and terminal error/limit categories.
+
+Day 8 closes these specific gaps without rewriting queries/retrieval or adding a framework.
+SecretGuard screens configured API keys, writer/reader URLs and password encodings,
+common credential patterns and sensitive keys. Credential-bearing questions/provider
+arguments are rejected before dispatch; tool results are withheld before evidence/replay.
+ProviderError uses canonical known/unknown diagnostics, and JSON logs have redaction as
+a backup. Non-assistant provider output roles are rejected; malicious document text
+remains function-output data and cannot add tool capabilities.
+
+Owned workers are shielded and drained before cancellation propagation or resource cleanup.
+Subsequent calls stop after a deadline. The raw question cap and message-count budget
+are enforced early; expected result slots are reserved before tool I/O. Provenance and
+scoped conflict checks stop inconsistent synthesis. Outcomes expose partial, limitations
+and pending_tool_calls, with deterministic limitation notices. Agent tool and terminal
+events share generated trace IDs and safe operational fields.
+
+### Files created and modified
+
+Created:
+
+- `core/security.py`: credential/pattern screening and recursive sensitive-field redaction.
+- `agent/execution.py`: retained/shielded worker tasks and cancellation drain semantics.
+- `tests/test_guardrails.py`: **53** new deterministic adversarial/reliability cases.
+- `docs/security.md`: threat model, boundaries, failure categories and verification limits.
+
+Modified:
+
+- `agent/provider.py`: canonical diagnostics and unexpected SDK failure handling.
+- `agent/orchestrator.py`: shared credential/role/text checks, decoded argument screening,
+  and owned execution helper; preserves the retained Day 6 single-round lifecycle.
+- `agent/multistep.py`, `agent/state.py`: message reservation, partial/pending metadata,
+  conflict handling, generated notices, cancellation terminal logging and tool correlation.
+- `agent/evidence.py`: scoped record/passage conflict detection and limitation categories.
+- `agent/cli.py`: message-limit override, screened output, safe interruption and independent
+  provider/registry cleanup without raw exception output.
+- `core/config.py`, `.env.example`: AGENT_MAX_MESSAGES=128, validated range 2–256.
+- `core/logging.py`: credential-aware formatter, iteration/error/limit/pending fields.
+- `schemas/analytics.py`, `schemas/documents.py`, `schemas/llm.py`: sensitive_output tool
+  errors, citation/document consistency and uniqueness, raw question cap and outcome fields.
+- `tools/registry.py`: screen validated output for direct and agent users.
+- `main.py`, `tools/__main__.py`: inject the active Settings into logging redaction.
+- README, AGENTS, GOALS, PLANS, agent/architecture/LLM guides and this progress log.
+
+No project dependency or lockfile changes were needed. Database builders, reader audit,
+models/migrations, BM25 retrieval and existing test modules remain unchanged. Existing
+API routes retain their behavior. The only new standalone utility was pip-audit in a
+temporary tool environment for the requested advisory check, not a project dependency.
+
+### Actual commands and results
+
+| Check | Actual result |
+| --- | --- |
+| Initial `.venv/bin/python --version` | Reported 3.12.15; subsequent startup revealed missing standard-library encodings. |
+| Initial `python -m pytest` | Could not start: temporary Python standard library missing encodings. |
+| First runtime restoration command | Failed: previous temporary uv bootstrap binary was also missing. |
+| Approved temporary uv bootstrap install and Python reinstall | Passed; restored Python 3.12.15 without changing project dependencies. |
+| Existing independent suite after repair | 216 passed, 32 PostgreSQL cases explicitly skipped. |
+| Old PostgreSQL readiness/cluster inspection | No server; temporary cluster lacked PG_VERSION/config/global metadata. |
+| Separate Day 8 cluster, migration, seed and reader setup | Passed on loopback port 55438; original synthetic fixture counts restored using existing scripts. Old directory left untouched. |
+| Intermediate full suite | 297 passed before final coverage additions. |
+| Final full pytest with writer/reader test URLs | **301 passed**, 1 existing dependency warning, in 6.67s; all 32 PostgreSQL cases executed. |
+| Final pytest without database test settings | **269 passed, 32 skipped**, 1 warning, in 2.22s. |
+| Agent/provider/adversarial subset | **160 passed** in 1.91s. |
+| New adversarial module | **53 passed** in 0.50s. |
+| `ruff check .` | Passed. |
+| `ruff format --check .` | Passed; 78 files already formatted. |
+| Four real mock CLI A–D demonstrations | All exit 0, mode=mock, status=completed, grounding_checks=passed; explicit limited-record notices where applicable. |
+| Document-search evaluation | 20 questions, 10 documents/40 chunks; Hit Rate@5=1.0, MRR@5=1.0 unchanged. |
+| pip-audit against installed project environment | Exit 0; **36 third-party packages checked, zero known advisories**. Editable querypilot-ai explicitly skipped. |
+| Safe key/model presence check | api_key_configured=false, model_configured=false; values never printed. |
+| Live OpenAI requests | Not run; unconfigured and separately unapproved. |
+| Docker/deployment/frontend checks | Not run; no new work in those milestones. |
+| Dependency, DB builder/migration and BM25 implementation diffs | Empty. |
+
+The existing FastAPI/Starlette HTTPX deprecation warning remains nonfatal. Initial Ruff
+checks caught long lines, an import and Python 3.12 generic syntax. The first new partial
+batch test accidentally used identical calls, which correctly hit duplicate suppression;
+distinct arguments fixed that fixture. A later document-conflict test needed a missing
+ToolResult import. These two test-development failures were corrected before final runs;
+no failed assertion remains. Failed patch applications were atomic and left no partial edits.
+
+Final full regression command:
+
+```sh
+TEST_DATABASE_URL=postgresql+psycopg://querypilot_admin@127.0.0.1:55438/querypilot_day8_verify TEST_READER_DATABASE_URL=postgresql+psycopg://querypilot_reader@127.0.0.1:55438/querypilot_day8_verify .venv/bin/python -m pytest -q --tb=short
+```
+
+Focused regression command:
+
+```sh
+.venv/bin/python -m pytest -q tests/test_guardrails.py tests/test_multistep.py tests/test_llm.py tests/test_openai_provider.py --tb=short
+```
+
+The dependency check ran pip-audit through temporary uv tooling with
+`--path .venv/lib/python3.12/site-packages --skip-editable --format json`, writing a
+temporary report outside the repository. It checked installed versions, not a formal
+application/OS/database audit, package provenance or every possible unknown vulnerability.
+No dependency remediation was needed based on that result.
+
+### Adversarial and reliability evidence
+
+Tests demonstrate that malicious retrieved text and fake system/developer instructions
+remain data, unauthorized names cannot reach the SQL repository, and arbitrary SQL-shaped,
+oversized, nonfinite, duplicate-key or out-of-bound arguments fail safely. Legitimate
+quoted suspicious text remains answerable with the actual citation. Known credentials,
+password encodings, authorization patterns, provider diagnostics and sensitive config
+keys are withheld/redacted in model replay, direct results, logs and verbose CLI output.
+Exact copies of long trusted prompt lines are withheld as a supplemental measure.
+
+Event-driven tests cancel a running tool, cancel it again during drain, and verify that
+the worker finishes before cancellation propagates. The end-to-end ask cancellation test
+proves provider/registry cleanup waits for that worker and later batch calls do not run.
+Provider cancellation propagates and emits safe terminal telemetry. Tests also cover
+cleanup exceptions, pending partial batches, message caps before I/O, raw padded-question
+limits, SQL/passage conflicts, citation provenance and truncation notices.
+
+Existing tests continue to cover actual DB write denial, read-only enforcement, timeout
+cancellation/recovery, all SQL tools, BM25 filesystem/relevance regressions, FastAPI routes,
+SDK authentication/rate/retry/timeout handling, exact call-ID/reasoning replay, call/iteration/
+byte limits, duplicate suppression and concurrent request state isolation. All external
+model traffic remains mocked; no paid request is in the default suite.
+
+### Actual mock CLI behavior
+
+All four commands used `python -m querypilot.cli ask QUESTION --mock --verbose
+--max-messages 128`, the real synthetic reader on port 55438 and the local documents:
+
+- A selected get_top_products(limit=5), took two iterations, and returned the same five
+  revenues beginning Outdoors Product 064 USD 37,882.39. partial=true and
+  truncated_evidence identify that more catalog rows exist; the selected top five remain valid.
+- B selected search_business_documents(query="product return window", top_k=1), took two
+  iterations and retained QP-RET-001#s002-c001 with the actual 30-day passage. partial=false
+  means no mechanically detected limitation, not proof of complete policy coverage.
+- C executed those SQL/document operations in two separate rounds, then combined actual
+  product rows and E2 policy evidence in iteration three, with the limited-record notice.
+- D executed get_revenue_summary(group_by="month") then a failed-payment document search,
+  followed by synthesis. It retained QP-PAY-003#s002-c001 and showed ten actual monthly
+  buckets with both partial/truncated metadata and an explicit incomplete-series notice.
+
+These demonstrate real tool wiring and deterministic safeguards, not live model selection
+or a factual accuracy benchmark. The search evaluation remains an authored regression set.
+
+### Remaining limitations and next milestone
+
+No Day 8 implementation blocker remains. Live OpenAI acceptance and behavior are pending.
+Credential screening can miss unknown/transformed formats and can reject benign text,
+especially when short configured passwords overlap data. It is not comprehensive data-loss
+prevention or personal-data anonymization. Application-controlled logs are protected;
+external raw SDK/HTTP/SQL debug logging is outside this formatter.
+
+Prompt-injection risk is reduced, not eliminated: malicious content may influence approved
+tool choices or produce misleading prose. Exact prompt-copy detection is incomplete.
+Citation/numeric membership and structural conflicts do not establish semantic entailment,
+resolve different-policy contradictions or provide a consistent DB snapshot across rounds.
+Selected/truncated data cannot establish all-data totals. A completed loop with partial
+metadata must not be presented as a fully answered request.
+
+Worker draining avoids abandonment and cleanup races, but cannot terminate a hung thread;
+cleanup can exceed the execution deadline. Existing bounded tools/native DB deadlines are
+required. Arbitrary hung extensions and forceful process termination are not gracefully
+isolated. There is no user/tenant authorization boundary yet and no chat HTTP endpoint.
+
+Prepare focused commits for credential/trust safety, worker reliability, budgets/evidence/
+telemetry, tests and documentation. Commit/push approval has now been received;
+use six groups: credential safety, contracts, execution, CLI, tests and documentation. Day 9, after a new request, adds the
+Streamlit interface using these safe outcomes and limitation indicators. Day 9 has not begun.

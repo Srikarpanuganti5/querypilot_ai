@@ -5,7 +5,9 @@
 Days 1–6 established API, database, analytics, document retrieval and direct OpenAI
 function calling. Day 7 adds bounded multi-step orchestration with isolated request state.
 Keep the Day 6 SingleRoundService compatible; both ask CLIs now use MultiStepService.
-No chat HTTP endpoint, UI, persistent memory or deployment is part of Day 7.
+Day 8 strengthens secret screening, provider error safety, worker cancellation/cleanup,
+message budgets, partial/conflicting evidence reporting and correlated telemetry.
+No chat HTTP endpoint, UI, persistent memory or deployment is part of Day 8.
 Read GOALS.md, PLANS.md,
 docs/architecture.md, and docs/progress.md before changing scope. Stop after the
 requested milestone; later milestones require a new request. User instructions
@@ -78,4 +80,12 @@ configured credentials and separate usage approval.
 
 The user has now explicitly approved committing and pushing Day 7 in focused groups:
 limits/state, loop/evidence, CLI/mock, tests, and documentation. Paid live API usage
-remains separately unapproved. Stop after Day 7; Day 8 requires another request.
+remains separately unapproved.
+
+The user has now explicitly approved committing and pushing Day 8. Use six focused
+groups: credential/diagnostic safety, budget/evidence contracts, execution reliability,
+CLI cleanup, adversarial tests, and documentation. Preserve registry and
+read-only SQL boundaries. Drain owned tool workers before resource cleanup, propagate
+cancellation, and never log raw provider exceptions or secret-bearing payloads. Do not
+describe deterministic adversarial tests or dependency checks as a formal security audit.
+Stop after Day 8; do not begin the Day 9 frontend without a separate request.

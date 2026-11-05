@@ -1,4 +1,4 @@
-# Multi-step orchestration (Day 7)
+# Multi-step orchestration and guardrails (Days 7–8)
 
 MultiStepService repeatedly consumes provider output, executes approved registry calls
 and returns bounded evidence until an answer or limit. Live selection is model-driven;
@@ -41,6 +41,7 @@ no paid requests were made. All standard tests mock external model calls.
 | AGENT_MAX_TOOLS_PER_ITERATION | 5 | 1–6 |
 | AGENT_TIMEOUT_SECONDS | 90 | 0.01–300 |
 | AGENT_MAX_CONTEXT_BYTES | 128000 | 1000–512000 |
+| AGENT_MAX_MESSAGES | 128 | 2–256 |
 | LLM_MAX_EVIDENCE_BYTES | 12000 | 1000–32000 |
 | LLM_TOTAL_EVIDENCE_BYTES | 48000 | 2000–128000 |
 | LLM_MAX_EVIDENCE_ROWS | 10 | 1–20 |
@@ -49,7 +50,7 @@ no paid requests were made. All standard tests mock external model calls.
 | LLM_MAX_RETRIES | 1 | 0–2 |
 | LLM_MAX_OUTPUT_TOKENS | 1600 | 256–4000 |
 
-CLI flags override the five AGENT settings. Other limits use environment settings.
+CLI flags override the six AGENT settings, including --max-messages. Other limits use environment settings.
 LLM_MAX_TOOL_CALLS is the retained Day 6 batch setting, not the Day 7 total-call limit.
 Each model request consumes an iteration, including the final response; five iterations
 can therefore accommodate four tool rounds plus an answer. SDK retries stay inside the
@@ -60,7 +61,7 @@ after exactly reaching the total-call cap, provided iterations/time/context rema
 ## State, protocol and tools
 
 Every run creates AgentState with its own request ID, question, start time, iteration,
-messages, call IDs, fingerprints, tool traces, errors and status. Tool traces contain
+messages, call IDs, fingerprints, tool traces, pending calls, errors and status. Tool traces contain
 bounded results and citation lists. No persistent memory or conversation store exists.
 Public trace_id is the request ID; iterations/elapsed_ms describe the run.
 
@@ -94,11 +95,15 @@ uncertainty instead of forwarding unsupported model prose. With evidence, the fi
 answer must pass the existing reference/source/numeric checks.
 
 Tool/provider/overall deadlines, invalid protocol, exhausted budgets and unexpected
-internal failures terminate safely. Earlier bounded evidence remains available. A tool
-await deadline stops the run and skips subsequent work, since asyncio.to_thread cannot
-forcibly terminate its worker. asyncio.run shutdown may wait for that worker; the overall
-deadline is an orchestration await limit, **not a hard process wall-clock guarantee**.
-Database statement/connection/pool deadlines remain independently important.
+internal failures terminate safely. Earlier bounded evidence remains available. Day 8
+retains each synchronous worker task and drains it on timeout/cancellation before
+returning or closing the registry. No later batch member is launched after a deadline.
+Cancellation is re-raised after cleanup, including repeated cancellation during the
+worker drain. Python cannot forcibly terminate a worker thread: cleanup may outlast
+the execution deadline, so this is **not a hard process wall-clock guarantee**.
+The existing bounded loader and database statement/connection/pool deadlines matter;
+an arbitrary hung extension could delay cleanup indefinitely. Such extensions are not
+supported. The CLI returns a safe request_cancelled code/exit 130 on KeyboardInterrupt.
 
 Each tool is allocated min(per-tool limit, total evidence limit / configured total-call
 cap) bytes. Default allocation is 4800 bytes. Complete records are removed to fit both
@@ -113,6 +118,42 @@ history. It is checked before requests, before accumulating output and before ad
 tool messages. Oversized context stops execution without dropping unmatched calls or
 reasoning items. This is not a token counter, provider context-window guarantee or whole
 process memory cap. Provider output also retains its existing 64-item/128000-byte limit.
+
+Day 8 also checks message counts before requests and reserves space for every batch
+member's result before starting tool I/O. Raw questions are bounded before whitespace
+normalization. Provider output may contain only assistant messages, reasoning and
+function calls; system/developer/user output roles are rejected rather than replayed.
+An instruction-shaped JSON string inside a passage stays inside function output data.
+
+## Trust, secrets and partial results
+
+The [security guide](security.md) defines the threat model and exact screening limits.
+Configured credentials and recognizable credential patterns are rejected in questions,
+provider output and decoded function arguments. The registry and shared executor withhold
+credential-bearing tool data before evidence/traces. Application log formatting redacts
+known credentials and sensitive configuration fields as a backup. Provider errors use
+canonical messages, including unknown provider diagnostics. There is no environment,
+configuration, filesystem, shell, arbitrary SQL or HTTP-exfiltration tool.
+
+Outcomes now include partial, limitations and pending_tool_calls. Status=completed means
+the loop produced a mechanically checked answer, not that coverage or factual accuracy
+is guaranteed. Failed tools, successful empty results and selected/truncated records are
+distinct in limitations. Limited evidence always adds an application-generated notice;
+the application never cuts an answer mid-citation to fit that notice. A notice that
+cannot fit the answer cap causes safe rejection instead.
+
+Error exits retain bounded earlier traces, omit a final answer and mark execution_stopped
+when tools were attempted. Pending calls are accepted batch calls without a recorded
+outcome, including an interrupted call whose worker was drained and its remaining peers;
+they must not be interpreted as successful execution. An external cancellation propagates
+to the caller rather than returning an outcome, with a cancelled terminal log record.
+
+Passage citation IDs must match their document and be unique within a search result.
+Across rounds, different excerpts for one citation, or different row values for the same
+operation/filter scope and row identity, cause evidence_conflict and stop synthesis.
+Different dates or grouping scopes are allowed. This detects structural conflicts, not
+all semantic contradictions between distinct policies. All original reference/numeric
+checks remain in effect, with the same incomplete semantic guarantees.
 
 Retrieved text stays untrusted data. Mechanical checks reject unknown evidence IDs,
 unknown/orphan document citations (including invented short document references), and

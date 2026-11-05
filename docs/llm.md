@@ -6,6 +6,8 @@ The six existing registry tools remain the only executable business operations.
 Day 7 now provides [MultiStepService and the current ask CLI](agent.md). The lifecycle
 and actual-batch budgets below describe the retained SingleRoundService specifically;
 the current CLI permits additional rounds and reserves evidence across its total-call cap.
+Day 8 applies shared credential/error screening and owned worker draining to both
+services; see [security.md](security.md) for current cancellation and trust boundaries.
 
 ## Configuration and modes
 

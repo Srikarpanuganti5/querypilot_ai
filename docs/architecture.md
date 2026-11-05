@@ -1,6 +1,6 @@
 # Architecture
 
-## Current state: Day 7
+## Current state: Day 8
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
@@ -9,6 +9,57 @@ by migration, seed, and verification commands. API initialization remains databa
 The direct OpenAI adapter and bounded multi-step service are implemented with mock/protocol
 verification; actual API verification is pending. No chat endpoint, frontend, persistent
 conversation memory, full deployment or CI is present.
+
+## Security and reliability boundaries
+
+```mermaid
+flowchart TD
+    Q[Untrusted question] --> I[Length and credential screening]
+    I --> A[Request-local bounded agent]
+    A --> P[Trusted instructions + user/data messages]
+    P --> M[Provider with bounded retries and deadlines]
+    M --> V[Validate output roles, IDs, arguments and budgets]
+    V --> R[Fixed six-tool registry]
+    R --> DB[Parameterized SELECTs + restricted reader]
+    R --> D[Bounded local document index]
+    DB --> E[Validated and credential-screened evidence]
+    D --> E
+    E --> A
+    A --> C[Citation, conflict and partial-result checks]
+    C --> O[Safe answer, bounded traces or terminal error]
+```
+
+Trusted instructions come from code. Questions, SQL text fields and document passages
+remain user/function-output data; they cannot supply system/developer authority. Provider
+message roles are checked before replay. Model names cannot select dynamic code, URLs,
+filesystem paths or SQL. Existing registry schemas, SQL privileges and read-only
+transactions remain the actual capability boundary. No tool exposes settings or secrets.
+
+`core/security.py` screens configured credentials and recognizable secret patterns.
+Questions and decoded provider arguments are checked before dispatch; credential-bearing
+tool data is withheld in both direct registry and agent paths. `agent/provider.py` exposes
+only a fixed diagnostic catalog, including unexpected errors. JSON logging applies a
+credential/sensitive-field redaction backup. Settings remain SecretStr-backed; full
+configuration, headers and environment mappings are never serialized to model context.
+
+`agent/execution.py` retains each worker Task, shields it from outer cancellation and
+drains it before cancellation propagates or resources close. This avoids abandoned tool
+tasks and cleanup racing an in-flight registry operation. No later batch member starts
+after a deadline. Native SQL and file-loader bounds remain important because Python
+cannot safely terminate a thread. Cleanup can exceed the execution budget; see
+[security.md](security.md) for the supported boundary and hung-extension limitation.
+
+Message counts are checked before API calls and reserve every result slot before tool
+I/O. Accepted-but-unresolved batch calls are counted in pending_tool_calls. Partial and
+limitations identify selected/truncated records, empty results, tool failures and stopped
+execution. Conflicting scoped row values or versions of one passage citation stop
+synthesis. Citation-to-document consistency and per-output uniqueness validate provenance;
+they do not establish semantic correctness of every statement.
+
+Agent tool and terminal logs share trace IDs. Safe fields include mode, status, approved
+tool name, iteration/tool counts, elapsed time, error category, limit reason and pending
+count. Raw prompts, model reasoning, record bodies, arguments and provider diagnostics
+are excluded. No new telemetry platform or persistent request state was introduced.
 
 ## Multi-step model/tool service
 

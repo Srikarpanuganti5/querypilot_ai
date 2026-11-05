@@ -6,7 +6,7 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 7 bounded multi-step orchestration.** FastAPI, PostgreSQL, synthetic data,
+**Current status: Day 8 security guardrails and reliability.** FastAPI, PostgreSQL, synthetic data,
 five read-only analytics tools, document retrieval, and the direct OpenAI SDK adapter are
 implemented. The six-tool workflow is mock/protocol verified; actual live API verification
 remains pending. The agent supports repeated tool rounds; no chat endpoint or UI is implemented. Search, mock
@@ -328,6 +328,31 @@ deadline. See [agent behavior and limitations](docs/agent.md).
 
 ## Development roadmap
 
+Day 8 strengthens the existing agent with credential screening, safe provider errors,
+message-count limits, explicit partial-result metadata, citation provenance and conflicting
+record checks, correlated telemetry, and owned worker cleanup on timeout/cancellation.
+The default message limit is 128 (hard maximum 256), configured with
+`QUERYPILOT_AGENT_MAX_MESSAGES` or `--max-messages`. Existing iteration/call/time defaults
+remain 5/10/5/90 seconds. No runtime or development dependencies were added.
+
+Credential-like input is rejected before model requests. Credential-bearing tool results
+are withheld rather than forwarded as evidence. Configured API keys, database URLs and
+passwords are screened; common authorization/key patterns and sensitive configuration
+fields are also redacted from application-controlled output. Provider diagnostics use a
+fixed code/message catalog. No raw authorization headers or environment dumps are logged.
+
+Outcomes expose `partial`, `limitations` and `pending_tool_calls`. A completed loop may
+still have limited evidence; it is not a claim that the whole question was answered.
+Errors preserve earlier bounded traces and suppress a misleading final answer. Contradictory
+values for the same scoped record/passage stop synthesis. Cancellation propagates after
+the current synchronous worker is drained, before resources close. Cleanup can therefore
+outlast the execution deadline; a thread cannot be forcibly terminated safely.
+
+See [the security threat model and limitations](docs/security.md). Structural boundaries,
+least privilege, screening and adversarial tests reduce risk; they do not guarantee prompt
+injection immunity, detect every secret encoding, or establish factual entailment.
+Live OpenAI verification remains pending; no paid requests were made on Day 8.
+
 Day 1 establishes the foundation. Day 2 adds FastAPI and health; Day 3 introduces
 PostgreSQL and synthetic data; Days 4–5 add analytics and document tools; Day 6 introduces
 LLM tool calling; Days 7–8 add orchestration and reliability; Day 9 adds Streamlit.
@@ -345,6 +370,7 @@ See [PLANS.md](PLANS.md) for the detailed proposed sequence.
 - [docs/document_search.md](docs/document_search.md): corpus, categories, safe ingestion and evaluation.
 - [docs/llm.md](docs/llm.md): Responses adapter, setup and retained Day 6 service.
 - [docs/agent.md](docs/agent.md): Day 7 loop, state, limits, recovery and CLI.
+- [docs/security.md](docs/security.md): Day 8 trust boundaries, error behavior and verification limits.
 - [docs/progress.md](docs/progress.md): implementation and verification status.
 - [data/sample/](data/sample/README.md): synthetic fixture policy and developer SQL.
 

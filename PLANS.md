@@ -1,9 +1,9 @@
 # Development roadmap
 
-Days 1–6 are implemented and pushed. Day 7 adds the bounded multi-step service,
-request-local state, recovery, limits and updated CLI. Mock/protocol verification is
-implemented; actual results are recorded in docs/progress.md. Live API behavior remains
-pending credentials and explicit usage approval. The user has approved focused Day 7 commits and a push.
+Days 1–7 are implemented and pushed. Day 8 strengthens secret protection, message budgets,
+cancellation/cleanup, partial/conflicting evidence handling and reliability telemetry.
+Actual verification is recorded in docs/progress.md. Live API behavior remains pending
+credentials and explicit usage approval. The user has now approved focused Day 8 commits and a push.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -16,7 +16,7 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 5 | Ten policies, safe ingestion, BM25, sixth tool and citations | Filesystem/retrieval tests, 20-question metrics, SQL/API regressions |
 | 6 | Async SDK, six strict schemas, one tool batch/follow-up, evidence bounds, CLI | Mocked SDK/protocol/error/grounding tests; actual API checks remain opt-in |
 | 7 | Bounded multi-step orchestration, state, traces and CLI | Mock A–D demos, SDK replay, limits/recovery/isolation and regressions |
-| 8 | Advanced guardrails and reliability | Broader failure-path, adversarial and security tests |
+| 8 | Credential/trust boundaries, cancellation, budgets, evidence integrity and telemetry | Adversarial and prior SQL/API/provider/search regressions; dependency advisory check |
 | 9 | Streamlit interface | Chat and evidence display |
 | 10 | Broader automated tests | API, tool, and database integration coverage |
 | 11 | Agent evaluations | Tool choice, factual support, injection scenarios |
@@ -97,3 +97,20 @@ orchestration/CLI, tests, and documentation commits.
 No new dependency or schema migration is needed. Preserve existing SQL privileges,
 retrieval, APIs and Day 6 single-round behavior. The user has now approved committing/pushing Day 7 in focused groups. Day 8 starts only after a separate request and covers advanced
 guardrails and reliability; no frontend, persistent memory or deployment is included today.
+
+## Day 8 implementation and review groups
+
+1. Credential/trust boundaries: configured-secret and credential-pattern screening,
+   safe provider error catalog, log filtering and private-output handling.
+2. Reliability: retained/drained synchronous workers, cancellation propagation,
+   resource cleanup and safe terminal/error telemetry.
+3. Budgets/evidence: message-count reservation, raw input bounds, provenance validation,
+   scoped conflict detection and explicit partial-result metadata/notices.
+4. Tests: deterministic adversarial fixtures, event-driven cancellation and retained
+   Day 6/7, SQL, API and BM25 regressions; temporary dependency advisory tooling.
+5. Documentation: threat model, limitations, actual results and Day 9 preparation.
+
+No new project dependency is needed. The user has now explicitly approved
+Day 8 commits/push in six focused groups: credential safety, contracts, execution,
+CLI, tests and documentation. Day 9, after a separate request, adds the Streamlit interface using
+the established safe outcomes, tool summaries and partial/limitation indicators.
