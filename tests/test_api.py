@@ -54,7 +54,12 @@ def test_openapi(client: TestClient) -> None:
     assert document["openapi"].startswith("3.")
     assert document["info"]["title"] == "QueryPilot AI"
     assert document["info"]["version"] == "0.1.0"
-    assert set(document["paths"]) == {"/health", "/api/v1/info"}
+    assert set(document["paths"]) == {
+        "/health",
+        "/api/v1/info",
+        "/api/v1/agent/ask",
+        "/api/v1/agent/capabilities",
+    }
     assert document["paths"]["/health"]["get"]["responses"]["200"]["content"]
 
 
