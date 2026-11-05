@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 DocumentCategory = Literal[
     "refunds",
@@ -49,6 +49,12 @@ class SearchHit(BaseModel):
     score: float = Field(gt=0, allow_inf_nan=False)
     source_citation: str = Field(pattern=r"^QP-[A-Z]{2,12}-[0-9]{3}#s[0-9]{3}-c[0-9]{3}$")
 
+    @model_validator(mode="after")
+    def matching_provenance(self) -> "SearchHit":
+        if not self.source_citation.startswith(self.document_id + "#"):
+            raise ValueError("Citation does not belong to the document")
+        return self
+
 
 class DocumentSearchOutput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -57,3 +63,10 @@ class DocumentSearchOutput(BaseModel):
     indexed_documents: int = Field(ge=0, le=50)
     indexed_chunks: int = Field(ge=0, le=500)
     content_trust: Literal["untrusted"] = "untrusted"
+
+    @model_validator(mode="after")
+    def unique_citations(self) -> "DocumentSearchOutput":
+        citations = [hit.source_citation for hit in self.matches]
+        if len(set(citations)) != len(citations):
+            raise ValueError("Duplicate passage citations")
+        return self

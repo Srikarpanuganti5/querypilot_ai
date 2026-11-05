@@ -18,6 +18,7 @@ class AgentState:
     call_ids: set[str] = field(default_factory=set, repr=False)
     fingerprints: set[str] = field(default_factory=set, repr=False)
     evidence_bytes: int = 0
+    pending_tool_calls: int = 0
     status: str = "running"
     errors: list[ExecutionError] = field(default_factory=list)
 

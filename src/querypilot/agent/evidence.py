@@ -9,6 +9,68 @@ from querypilot.schemas.analytics import ToolResult
 DOCUMENT_CITATION = r"QP-[A-Z]{2,12}-[0-9]{3}#s[0-9]{3}-c[0-9]{3}"
 
 
+def evidence_conflicts(traces: list) -> bool:
+    """Detect differing values for identical scoped row/passage identities, not semantics."""
+    seen = {}
+    for trace in traces:
+        if not has_evidence(trace.result):
+            continue
+        data = trace.result.data.model_dump(mode="json")
+        if trace.tool == "search_business_documents":
+            records = [(hit["source_citation"], hit["excerpt"]) for hit in data["matches"]]
+            scope = "documents"
+        else:
+            arguments = {
+                key: value
+                for key, value in trace.arguments.items()
+                if key != "limit" and value is not None
+            }
+            if trace.tool == "get_revenue_summary":
+                arguments.setdefault("group_by", "month")
+            scope = json.dumps([trace.tool, arguments], sort_keys=True)
+            records = []
+            for row in data["rows"]:
+                identity = next(
+                    (
+                        row[key]
+                        for key in (
+                            "product_id",
+                            "customer_id",
+                            "bucket",
+                            "category",
+                            "payment_status",
+                        )
+                        if key in row
+                    ),
+                    None,
+                )
+                records.append((identity, json.dumps(row, sort_keys=True)))
+        for identity, value in records:
+            key = scope, identity
+            if key in seen and seen[key] != value:
+                return True
+            seen[key] = value
+    return False
+
+
+def evidence_limitations(traces: list) -> list[str]:
+    limitations = []
+    if any(trace.error for trace in traces):
+        limitations.append("tool_errors")
+    if any(
+        trace.output_truncated
+        or (trace.result and trace.result.data and getattr(trace.result.data, "truncated", False))
+        for trace in traces
+    ):
+        limitations.append("truncated_evidence")
+    if any(
+        trace.result and trace.result.status == "success" and not has_evidence(trace.result)
+        for trace in traces
+    ):
+        limitations.append("empty_results")
+    return limitations
+
+
 def packet(evidence_id: str, payload: dict) -> str:
     return json.dumps(
         {"evidence_id": evidence_id, "untrusted_data": True, "result": payload},
