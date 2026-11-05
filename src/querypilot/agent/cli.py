@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+import logging
 from uuid import uuid4
 
 from pydantic import ValidationError
@@ -12,23 +13,24 @@ from querypilot.agent.multistep import MultiStepService
 from querypilot.agent.provider import OpenAIProvider, ProviderError
 from querypilot.core.config import Settings
 from querypilot.core.logging import configure_logging
+from querypilot.core.security import SecretGuard
 from querypilot.schemas.llm import ExecutionError, ExecutionOutcome
 from querypilot.tools.registry import create_registry
 
 
 async def ask(question: str, *, live: bool, limits: dict | None = None) -> ExecutionOutcome:
-    provider, registry = None, None
+    provider, registry, outcome = None, None, None
     try:
         settings = Settings(**limits) if limits else Settings()
-        configure_logging(settings.log_level)
+        configure_logging(settings.log_level, settings=settings)
         provider = OpenAIProvider(settings) if live else MultiStepMockProvider()
         registry = create_registry(settings)
-        return await MultiStepService(provider, registry, settings).run(question)
+        outcome = await MultiStepService(provider, registry, settings).run(question)
     except (ProviderError, ValidationError) as exc:
-        return ExecutionOutcome(
+        outcome = ExecutionOutcome(
             trace_id=str(uuid4()),
             mode="live" if live else "mock",
-            question=question[:4000],
+            question="",
             status="error",
             errors=[
                 ExecutionError(
@@ -40,10 +42,32 @@ async def ask(question: str, *, live: bool, limits: dict | None = None) -> Execu
             ],
         )
     finally:
-        if provider is not None:
-            await provider.close()
-        if registry is not None:
-            registry.close()
+        try:
+            if provider is not None:
+                await provider.close()
+        except Exception:
+            if outcome is not None:
+                outcome.status, outcome.answer = "error", None
+                outcome.errors = outcome.errors[:20] + [
+                    ExecutionError(code="cleanup_error", message="Provider cleanup failed.")
+                ]
+            logging.getLogger("querypilot.llm").error(
+                "cleanup_failed", extra={"error_category": "cleanup_error"}
+            )
+        finally:
+            if registry is not None:
+                try:
+                    registry.close()
+                except Exception:
+                    if outcome is not None:
+                        outcome.status, outcome.answer = "error", None
+                        outcome.errors = outcome.errors[:20] + [
+                            ExecutionError(code="cleanup_error", message="Tool cleanup failed.")
+                        ]
+                    logging.getLogger("querypilot.llm").error(
+                        "cleanup_failed", extra={"error_category": "cleanup_error"}
+                    )
+    return outcome
 
 
 def main(arguments: list[str]) -> None:
@@ -69,6 +93,7 @@ def main(arguments: list[str]) -> None:
         ("max-tools-per-iteration", int),
         ("timeout-seconds", float),
         ("max-context-bytes", int),
+        ("max-messages", int),
     ):
         parser.add_argument(f"--{flag}", type=kind)
     args = parser.parse_args(arguments)
@@ -80,10 +105,22 @@ def main(arguments: list[str]) -> None:
             "max_tools_per_iteration",
             "timeout_seconds",
             "max_context_bytes",
+            "max_messages",
         )
         if getattr(args, name) is not None
     }
-    outcome = asyncio.run(ask(args.question, live=args.live, limits=limits))
+    try:
+        outcome = asyncio.run(ask(args.question, live=args.live, limits=limits))
+    except KeyboardInterrupt:
+        print(
+            json.dumps(
+                {
+                    "status": "error",
+                    "errors": [{"code": "request_cancelled", "message": "Request cancelled."}],
+                }
+            )
+        )
+        raise SystemExit(130) from None
     value = outcome.model_dump(mode="json")
     if not args.verbose:
         value.pop("question")
@@ -102,6 +139,6 @@ def main(arguments: list[str]) -> None:
             }
             for trace in value["tools"]
         ]
-    print(json.dumps(value, ensure_ascii=False))
+    print(json.dumps(SecretGuard().sanitize(value), ensure_ascii=False))
     if outcome.status == "error":
         raise SystemExit(1)
