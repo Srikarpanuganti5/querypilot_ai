@@ -30,7 +30,10 @@ packages = ["src/querypilot"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
-markers = ["postgres: requires TEST_DATABASE_URL pointing to an expendable PostgreSQL database"]
+markers = [
+    "postgres: real PostgreSQL; dedicated URLs and explicit schema-mutation acknowledgement required",
+    "local_http: real loopback HTTP server and Streamlit-to-database smoke checks",
+]
 
 [tool.ruff]
 target-version = "py312"
