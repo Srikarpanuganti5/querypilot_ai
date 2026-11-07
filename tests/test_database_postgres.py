@@ -1,6 +1,5 @@
 """Real PostgreSQL tests use a fresh disposable schema per test, never SQLite."""
 
-import os
 from collections.abc import Iterator
 from datetime import date
 from pathlib import Path
@@ -15,6 +14,7 @@ from querypilot.db.models import Base
 from querypilot.db.seed import SeedConflict, generate_dataset, seed_database
 from querypilot.db.session import Database, DatabaseError
 from querypilot.db.verify import VerificationError, verify_database
+from tests.postgres_support import test_urls
 
 pytestmark = pytest.mark.postgres
 REFERENCE = date(2026, 10, 27)
@@ -29,9 +29,7 @@ def migrate(database: Database, action: str, revision: str) -> None:
 
 @pytest.fixture
 def database() -> Iterator[Database]:
-    url = os.getenv("TEST_DATABASE_URL")
-    if not url:
-        pytest.skip("Set TEST_DATABASE_URL to enable isolated-schema PostgreSQL tests")
+    url, _ = test_urls(require_reader=False)
     admin = create_engine(url, hide_parameters=True)
     schema = f"querypilot_test_{uuid4().hex}"
     try:

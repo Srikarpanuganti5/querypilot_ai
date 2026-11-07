@@ -1,6 +1,5 @@
 """Real analytics/privilege tests require writer AND restricted reader URLs."""
 
-import os
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -19,6 +18,7 @@ from querypilot.db.analytics import AnalyticsRepository
 from querypilot.db.models import Base, Customer, Order
 from querypilot.db.session import Database
 from querypilot.tools.registry import ToolRegistry
+from tests.postgres_support import test_urls
 
 pytestmark = pytest.mark.postgres
 JANUARY = {"start_date": "2026-01-01", "end_date": "2026-02-01"}
@@ -27,9 +27,7 @@ JANUARY = {"start_date": "2026-01-01", "end_date": "2026-02-01"}
 @pytest.fixture
 def stores() -> Iterator[tuple[ToolRegistry, Database, Database]]:
     configure_logging("INFO")
-    writer_url, reader_url = os.getenv("TEST_DATABASE_URL"), os.getenv("TEST_READER_DATABASE_URL")
-    if not writer_url or not reader_url:
-        pytest.skip("Set TEST_DATABASE_URL and TEST_READER_DATABASE_URL for restricted-role tests")
+    writer_url, reader_url = test_urls()
     admin = create_engine(writer_url, hide_parameters=True)
     schema = f"querypilot_tools_{uuid4().hex}"
     with admin.begin() as connection:
