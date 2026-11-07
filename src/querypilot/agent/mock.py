@@ -96,7 +96,14 @@ class MultiStepMockProvider(MockProvider):
             plan.append(("get_top_products", {"limit": 5}))
         elif "revenue" in lower:
             plan.append(("get_revenue_summary", {"group_by": "month"}))
-        elif "failed" in lower and "payment" in lower and "handled" not in lower:
+        elif (
+            "failed" in lower
+            and "payment" in lower
+            and (
+                "handled" not in lower
+                or any(term in lower for term in ("how many", "count", "number of"))
+            )
+        ):
             plan.append(("get_payment_status_summary", {}))
         elif "customer" in lower and "order" in lower:
             plan.append(("get_customer_order_summary", {"limit": 5}))
