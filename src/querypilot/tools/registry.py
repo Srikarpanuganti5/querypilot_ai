@@ -10,7 +10,7 @@ from pydantic import BaseModel, ValidationError
 from querypilot.core.config import Settings
 from querypilot.core.security import SecretGuard
 from querypilot.db.analytics import AnalyticsRepository, UnsafeDatabaseError
-from querypilot.db.session import DatabaseError, create_database
+from querypilot.db.session import DATABASE_MESSAGES, DatabaseError, create_database
 from querypilot.schemas.analytics import (
     CustomerInput,
     CustomerOutput,
@@ -113,13 +113,9 @@ class ToolRegistry:
                     else:
                         if self._repository is None:
                             config = self._settings if self._settings is not None else Settings()
-                            try:
-                                self._repository = AnalyticsRepository(
-                                    create_database(config, reader=True),
-                                    config.db_statement_timeout_ms,
-                                )
-                            except DatabaseError:
-                                raise _ConfigurationError from None
+                            self._repository = AnalyticsRepository(
+                                create_database(config, reader=True), config.db_statement_timeout_ms
+                            )
                         rows, truncated = self._repository.execute(known_name, validated)
                         output = {"rows": rows, "truncated": truncated}
                     try:
@@ -134,10 +130,6 @@ class ToolRegistry:
                         error = ToolError(
                             code="invalid_output", message="Tool result failed validation."
                         )
-        except _ConfigurationError:
-            error = ToolError(
-                code="configuration_error", message="Configure restricted READER_DATABASE_URL."
-            )
         except DocumentError:
             error = ToolError(
                 code="document_error", message="Business document collection unavailable."
@@ -147,12 +139,10 @@ class ToolRegistry:
                 code="unsafe_database", message="Database role is not a restricted reader."
             )
         except DatabaseError as exc:
-            code = "timeout" if exc.code == "timeout" else "database_error"
+            code = exc.code if exc.code in DATABASE_MESSAGES else "database_error"
             error = ToolError(
                 code=code,
-                message="Query timed out."
-                if code == "timeout"
-                else "Analytics database unavailable.",
+                message=DATABASE_MESSAGES[code],
             )
         except Exception:
             error = ToolError(code="internal_error", message="Tool execution failed.")
@@ -164,6 +154,7 @@ class ToolRegistry:
                 "tool": known_name or "unknown",
                 "status": status,
                 "duration_ms": duration,
+                "error_category": error.code if error else None,
             },
         )
         return ToolResult(
@@ -173,10 +164,6 @@ class ToolRegistry:
     def close(self) -> None:
         if self._repository is not None:
             self._repository.close()
-
-
-class _ConfigurationError(Exception):
-    pass
 
 
 def create_registry(settings: Settings | None = None) -> ToolRegistry:

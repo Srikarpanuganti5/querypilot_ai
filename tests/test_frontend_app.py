@@ -213,3 +213,23 @@ def test_unexpected_client_failure_does_not_expose_traceback(ui):
     app.chat_input[0].set_value("Return policy?").run()
     assert not app.exception and not app.session_state.busy
     assert not any("UNSAFE_INTERNAL_DIAGNOSTIC" in item.value for item in app.error)
+
+
+def test_missing_reader_has_database_specific_setup_advice(ui):
+    from fastapi.testclient import TestClient
+
+    from querypilot.core.config import Settings
+    from querypilot.main import create_app
+    from querypilot.schemas.agent import AgentResponse
+
+    app, api = ui
+    settings = Settings(_env_file=None, database_url=None, reader_database_url=None)
+    with TestClient(create_app(settings)) as client:
+        response = client.post(
+            "/api/v1/agent/ask", json={"question": "Top products by revenue?", "mode": "mock"}
+        )
+    api.outcome = AgentResponse.model_validate(response.json())
+    app.chat_input[0].set_value("Top products by revenue?").run()
+    assert not app.exception
+    assert any("reader database" in item.value for item in app.warning)
+    assert not any("model credentials" in item.value for item in app.warning)

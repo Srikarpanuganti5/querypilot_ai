@@ -145,7 +145,7 @@ def test_reader_configuration_is_mandatory() -> None:
         )
     )
     result = registry.execute("get_top_products", {})
-    assert result.error.code == "configuration_error"
+    assert result.error.code == "reader_configuration_missing"
     assert result.data is None
     registry.close()
 

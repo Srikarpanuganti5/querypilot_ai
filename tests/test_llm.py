@@ -193,7 +193,7 @@ def test_empty_results_and_failures_are_distinct(settings: Settings) -> None:
         ScriptedProvider([ProviderTurn([call()])]), create_registry(settings), settings
     )
     assert "retrieval failed" in failed.answer
-    assert failed.tools[0].error.code == "configuration_error"
+    assert failed.tools[0].error.code == "reader_configuration_missing"
 
 
 @pytest.mark.parametrize(

@@ -138,7 +138,7 @@ def test_execution_limit_preserves_partial_evidence(settings):
 def test_missing_database_returns_safe_tool_failure(client):
     response = client.post("/api/v1/agent/ask", json={"question": "Top products by revenue?"})
     assert response.status_code == 200 and response.json()["status"] == "no_evidence"
-    assert response.json()["tools"][0]["error"]["code"] == "configuration_error"
+    assert response.json()["tools"][0]["error"]["code"] == "reader_configuration_missing"
 
 
 def test_secret_input_is_redacted(settings, capsys):
