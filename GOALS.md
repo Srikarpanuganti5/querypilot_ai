@@ -30,6 +30,10 @@ Day 9 adds local Streamlit chat and `/api/v1/agent/ask` with a shared server-sid
 lifecycle, safe evidence projection and independent questions. Live verification remains
 pending. Public deployment and persistent agent memory remain outside the current scope.
 
+Day 10 diagnoses normal-startup SQL failures, supplies safe local readiness checks and
+repeatable separate synthetic dev/test databases, and verifies real tools through HTTP/UI.
+Mock provider verification remains distinct from live OpenAI verification.
+
 ## Quality and security
 
 Use Python 3.12, type hints, separated responsibilities, reproducible setup, and focused
@@ -144,3 +148,15 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
   results distinguish real HTTP/database integration from in-memory component tests.
 - Startup commands, dependency purposes, local-only security and limitations documented.
 - No paid live verification claim; wait for commit/push approval and stop before Day 10.
+
+## Day 10 acceptance criteria
+
+- Reproduce and diagnose the observed SQL failure without assuming database downtime.
+- Fix confirmed defects with red/green regressions and preserve read-only boundaries.
+- Repeatable local prerequisites, read-only doctor and separate acknowledged test targets.
+- All five analytics tools verified against actual PostgreSQL and deterministic expectations.
+- Real tools through shared service/FastAPI plus automated actual TCP HTTP and UI smoke tests.
+- Four acceptance workflows include payment counts from SQL and policy text from documents.
+- Safe actionable diagnostics, retained security regressions, honest coverage/results reporting.
+- Verification matrix distinguishes real database, mock provider, mock HTTP, UI and pending live checks.
+- No destructive reset, fake revenue fallback, Day 11 work or unapproved commit/push.

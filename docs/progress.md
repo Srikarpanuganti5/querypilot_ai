@@ -1154,3 +1154,104 @@ Actual live OpenAI selection/schema/answer behavior remains pending approved ver
 No Day 9 implementation blocker remains. Prepare focused service/contracts, API, frontend/
 client, tests and documentation commits. Commit/push approval has now been received. Day 10 preview is Expanded
 Automated Testing and Integration Coverage; it has not been started.
+
+## Day 10 — Real integration verification and reliability (2026-11-06)
+
+Day 10 is complete locally; the user has now approved focused commits and a GitHub push.
+The Day 9 closing paragraph above records the earlier milestone state. Day 11 has not
+started. Full commands, boundary labels and fixture expectations are in [testing.md](testing.md).
+
+### Root cause and regression fixes
+
+Reproduced the exact top-products question through the running backend: the mock selected
+`get_top_products`, but returned `configuration_error` with no evidence. Safe configuration
+inspection confirmed `.env` absent and no reader URL configured. PostgreSQL was running
+on existing ports; the failure occurred before any database connection. Earlier temporary
+verification supplied an explicit reader URL and did not verify normal startup.
+
+Fixed misleading diagnostics with a dedicated missing-reader code and frontend guidance
+to configure reader settings and restart FastAPI. Other fixed categories distinguish
+invalid configuration, unavailable server, authentication, nonexistent database, missing
+tables, permissions and timeout. Raw connection details remain private. After explicit
+approval, restarted only the project's backend on port 8000; its cached old settings had
+otherwise retained the failure. The repaired backend remains running; the user's existing
+Streamlit instance on 8501 was preserved and remained healthy.
+
+The exact failed-payment count/handling question exposed a second defect: the mock
+selector suppressed analytics whenever “handled” appeared. Quantitative wording now
+selects payment analytics plus policy search. Two regression tests failed before these
+fixes and passed afterward. The actual OpenAI adapter was not changed or called.
+
+### Implementation and safety
+
+Added `services/doctor.py` and the `doctor` CLI command; checks are read-only and distinguish
+PASS, FAIL and dependent/optional SKIP. Added `scripts/prepare_local.py` using existing
+PostgreSQL, Alembic and seed code, with private owned native storage on loopback port 55440.
+Separate deterministic dev/test databases and restricted reader access were verified.
+The helper succeeded twice, preserving existing data/configuration on its repeat run.
+No existing database was reset; unrelated PostgreSQL instances remained untouched.
+Docker was unavailable locally, so native PostgreSQL supplied the real engine.
+
+Added acknowledged test-target guards in `tests/postgres_support.py`, real service fixtures
+in `conftest.py`, 16 actual workflow tests and 14 diagnostic unit cases, plus one frontend
+missing-reader regression. Existing PostgreSQL tests now enforce dedicated-target safety.
+New actual connection failures and a fixture-owned empty schema test exercise safe error
+serialization and released connections. Existing security controls were retained.
+
+Updated database classification, registry errors, analytics error contracts, frontend
+messages, CLI dispatch and mock selection. Updated README, architecture/security/testing
+guides, repository instructions, goals and plans. No project dependency additions were
+needed; pytest markers distinguish PostgreSQL and actual local HTTP checks. `.env` and
+`.local/` credentials, database files and reports are ignored and excluded from changes.
+
+### Actual verification results
+
+- REAL DATABASE VERIFIED / MOCK PROVIDER VERIFIED: full configured suite **383 passed,
+  0 failed, 0 skipped** in 10.70 seconds. The same suite under branch coverage passed all
+  383 again in 14.64 seconds. All five SQL operations use actual PostgreSQL expectations;
+  **48 tests** require the real database, including prior schema/security cases.
+- Without database variables: **335 passed, 48 explicitly skipped**, 0 failed in 4.06 seconds.
+  The focused real workflow module passed **16 tests** in 1.85 seconds.
+- Both full suites emit one existing Starlette TestClient/httpx deprecation warning.
+  No dependency was changed merely to silence that warning.
+- Coverage measured using temporary external coverage 7.17.2: **2037/2241 statements
+  (90.9%)**, **518/626 branches (82.7%)**, **89.1% combined**, scoped to `src/querypilot`.
+  Tests, scripts and third-party packages are not included. Report is ignored locally.
+- Final quality commands: `.venv/bin/ruff check .` passed;
+  `.venv/bin/ruff format --check .` reported **99 files already formatted**;
+  `git diff --check` passed. A credential-pattern scan of 29 changed/untracked nonignored
+  files flagged only the existing README example placeholder, not a real credential.
+  `git check-ignore` confirmed private environment, credential and coverage files excluded.
+- REAL DATABASE VERIFIED / MOCK PROVIDER VERIFIED: doctor with reference date 2026-10-27
+  and backend 8000 yielded **10 PASS, 0 FAIL, 0 SKIP**. Backend capabilities are only a
+  reachability check; actual workflow tests supply SQL execution proof.
+- MOCK HTTP VERIFIED / UI VERIFIED: isolated frontend tests retain fake transport for
+  controlled error states and safe rendering. These are separate from the real HTTP tests.
+- UI VERIFIED / REAL DATABASE VERIFIED / MOCK PROVIDER VERIFIED: actual typed-client TCP
+  requests and AppTest exercised Streamlit through FastAPI to real tools. Four questions
+  rendered eight chat messages, three SQL tables, three document citations, zero exceptions;
+  test reruns did not resubmit and clearing removed session history.
+
+All four acceptance questions passed against both an isolated actual HTTP test backend
+and the repaired normal backend on 8000. Return policy cites `QP-RET-001#s002-c001` and
+30 calendar days. Top products rank IDs 64, 35, 21, 76, 63 with respective revenue
+37882.39, 36509.32, 35946.86, 35386.60, 34591.86. The combined revenue/refund question
+retains both evidence types. Failed-payment question returns **486** from SQL and handling
+policy from `QP-PAY-003#s002-c001`. No revenue rows were substituted. The valid top-five
+subset may retain a limited-selection notice because additional products exist.
+
+### Remaining limitations and Git preparation
+
+NOT VERIFIED: live OpenAI behavior, manual browser acceptance, public deployment or formal
+security audit. Existing grounding, screening and cancellation limitations remain. No
+Day 10 implementation blocker remains; native setup requires installed PostgreSQL binaries.
+Security regression tests cover allowlisting, read-only privileges, parameterization,
+redaction, malicious retrieved content, references, budgets, cancellation and isolation;
+passing deterministic tests does not establish prompt-injection immunity.
+
+Recommended focused commit groups: safe database errors; mock selector regression;
+doctor CLI; repeatable native setup/test guards; real workflow and UI tests; documentation.
+Suggested milestone message: `test: expand real integration coverage and fix SQL retrieval`.
+GitHub publication is now authorized; its result will be reported after execution.
+Day 11 preview: Agent Evaluation &
+Performance Metrics, requiring a new request and separate approval for live usage.

@@ -1,8 +1,30 @@
-# Security and reliability boundaries (Day 8)
+# Security and reliability boundaries (through Day 10)
 
 This is an engineering review with deterministic adversarial tests and a dependency
 advisory check. It is not a formal security audit or penetration test. Only synthetic,
 publicly shareable data is supported. Actual live OpenAI behavior remains unverified.
+
+## Day 10 isolation and diagnostics
+
+Real PostgreSQL tests require matching dedicated reader/writer targets, distinct roles,
+a `querypilot_` database ending `_test` or `_verify`, and explicit
+`QUERYPILOT_TEST_DATABASE_ACK=allow-isolated-schemas`. Guards run before fixture DDL.
+Cleanup drops only fixture-owned UUID schemas, never normal databases. All five tools
+continue to use fixed parameterized SQL, role/privilege audits and read-only transactions.
+
+The explicit native setup helper owns a new private `.local/postgres` cluster and separate
+synthetic development/test databases. It preserves existing configuration and refuses
+unowned storage or unexpected migrations/data rather than resetting them. Administrative
+setup access is separate from agent reader access. Generated credentials and `.env` are
+private ignored files and must never be committed.
+
+Doctor performs read-only checks and never provisions, migrates, seeds or calls OpenAI.
+Its optional migration check uses configured setup access only for the same database;
+tools never fall back to that access. Safe fixed errors distinguish missing reader settings,
+unavailable servers, authentication, missing databases/tables, permissions and timeouts.
+Raw driver exceptions, connection URLs and SQL are not public diagnostics. Real failure
+tests cover unavailable ports, incorrect passwords, nonexistent databases and missing
+tables; synthetic SQLSTATE tests cover remaining classifications. See [testing.md](testing.md).
 
 ## Gap analysis and changes
 

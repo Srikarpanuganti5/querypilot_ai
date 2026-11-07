@@ -6,7 +6,7 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 9 interactive Streamlit frontend.** FastAPI, PostgreSQL, synthetic data,
+**Current status: Day 10 real integration verification and local diagnostics.** FastAPI, PostgreSQL, synthetic data,
 five read-only analytics tools, document retrieval, and the direct OpenAI SDK adapter are
 implemented. The six-tool workflow is mock/protocol verified; actual live API verification
 remains pending. The local Streamlit chat calls a typed agent HTTP endpoint, with tool
@@ -87,6 +87,21 @@ uv run --extra dev ruff format --check .
 ranges in `pyproject.toml`. Installation alone does not start the server.
 
 ## Start the backend
+
+For a repeatable native PostgreSQL setup, install PostgreSQL server tools, then run:
+
+```sh
+.venv/bin/python scripts/prepare_local.py
+.venv/bin/python -m querypilot.cli doctor --reference-date 2026-10-27
+```
+
+The helper creates an owned loopback cluster under ignored `.local/postgres` on port
+55440, separate synthetic development/test databases and restricted reader credentials.
+It writes a private ignored `.env` only if none exists, preserves existing data/configuration,
+and never resets a database. Restart FastAPI after changing its configuration. Mock SQL
+requires a configured **reader database**, not an OpenAI key; a healthy `/health` alone
+does not verify SQL readiness. [Testing and diagnostics](docs/testing.md) explains exact
+prerequisites, safety checks and alternative existing database setup.
 
 With the virtual environment activated:
 
@@ -358,6 +373,28 @@ deadline. See [agent behavior and limitations](docs/agent.md).
 
 ## Development roadmap
 
+Day 10 diagnosed the observed top-products failure: the normal backend had no reader
+configuration, while Day 9's temporary verification server received one explicitly.
+The durable local setup and specific database diagnostics close that setup gap. The
+combined failed-payment count/policy question now selects both real payment analytics
+and document retrieval in mock mode.
+
+To run all real integration tests after preparation:
+
+```sh
+set -a
+source .local/integration.env
+set +a
+.venv/bin/python -m pytest -q
+# Only actual loopback HTTP and UI-to-database smoke checks:
+.venv/bin/python -m pytest -q -m local_http
+```
+
+The explicit acknowledgement and dedicated test database are required before fixtures
+may create disposable schemas. Development database URLs are rejected. Without the
+integration environment, PostgreSQL cases skip explicitly. No OpenAI requests are needed.
+See [the verification matrix](docs/testing.md) for what each test category proves.
+
 Day 8 strengthens the existing agent with credential screening, safe provider errors,
 message-count limits, explicit partial-result metadata, citation provenance and conflicting
 record checks, correlated telemetry, and owned worker cleanup on timeout/cancellation.
@@ -402,6 +439,7 @@ See [PLANS.md](PLANS.md) for the detailed proposed sequence.
 - [docs/agent.md](docs/agent.md): Day 7 loop, state, limits, recovery and CLI.
 - [docs/security.md](docs/security.md): Day 8 trust boundaries, error behavior and verification limits.
 - [docs/frontend.md](docs/frontend.md): local Streamlit setup, typed HTTP contracts, session state and UX.
+- [docs/testing.md](docs/testing.md): isolated test setup, doctor, verification labels and real workflows.
 - [docs/progress.md](docs/progress.md): implementation and verification status.
 - [data/sample/](data/sample/README.md): synthetic fixture policy and developer SQL.
 

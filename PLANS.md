@@ -1,9 +1,9 @@
 # Development roadmap
 
-Days 1–8 are implemented and pushed. Day 9 adds local Streamlit chat, a typed HTTP client,
-safe agent endpoints and a shared CLI/API lifecycle. Actual verification is recorded in
-docs/progress.md. Live API behavior remains pending credentials and explicit usage
-approval. The user has now approved focused Day 9 commits and a push.
+Days 1–9 are implemented and pushed. Day 10 diagnoses SQL setup, adds safe readiness
+checks and repeatable local dev/test preparation, and automates actual PostgreSQL/HTTP/UI
+verification. Results are recorded in docs/progress.md. Live OpenAI behavior remains
+separately pending. The user has approved Day 10 commits and push to the existing repository.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -18,7 +18,7 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 7 | Bounded multi-step orchestration, state, traces and CLI | Mock A–D demos, SDK replay, limits/recovery/isolation and regressions |
 | 8 | Credential/trust boundaries, cancellation, budgets, evidence integrity and telemetry | Adversarial and prior SQL/API/provider/search regressions; dependency advisory check |
 | 9 | Local Streamlit chat and safe agent HTTP integration | API/client/AppTest, startup and actual mock HTTP/database demonstrations |
-| 10 | Expanded automated testing and integration coverage | Broader API, tool and database coverage after a new request |
+| 10 | Completed real integration coverage, SQL diagnostics and local readiness | 383 passed; 48 real PostgreSQL cases; actual HTTP/UI workflows; live OpenAI unverified |
 | 11 | Agent evaluations | Tool choice, factual support, injection scenarios |
 | 12 | Docker Compose | Startup and restricted credentials |
 | 13 | GitHub Actions and deployment docs | CI and reproducible setup |
@@ -129,3 +129,19 @@ Streamlit is the sole new direct dependency. HTTPX moves from dev-only to runtim
 the frontend client; no additional HTTP library is needed. Prepare focused commits and
 push after the user’s explicit Day 9 approval, now received. No persistent memory,
 public hosting or Day 10 infrastructure is added.
+
+## Day 10 implementation and review groups
+
+1. Diagnostics/selector fixes: specific safe database failure categories, actionable UI
+   advice and quantitative-plus-policy mock dispatch, each backed by regressions.
+2. Local prerequisites: owned native PostgreSQL preparation, preserved private configuration,
+   distinct synthetic dev/test databases and a read-only doctor command.
+3. Integration safety: explicit mutation acknowledgement, dedicated database validation,
+   UUID schema cleanup and consistent writer/reader targets.
+4. Real verification: all five SQL tools against an independent seed oracle, actual
+   FastAPI/shared service, real TCP HTTP and Streamlit smoke scenarios.
+5. Documentation: verified matrix, exact setup/doctor/testing commands, actual coverage
+   scope and limits. Prepare focused commits; wait for approval before committing/pushing.
+
+Day 11 preview is Agent Evaluation & Performance Metrics; no evaluation/benchmark
+framework or optimization work is included in Day 10.

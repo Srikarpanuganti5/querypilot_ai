@@ -1,6 +1,6 @@
 # Architecture
 
-## Current state: Day 9
+## Current state: Day 10
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
@@ -10,6 +10,23 @@ The direct OpenAI adapter and bounded multi-step service are implemented with mo
 verification; actual OpenAI verification is pending. Day 9 adds Streamlit chat and an
 agent HTTP endpoint for local development. Persistent agent memory, public deployment
 and CI remain outside the implemented scope.
+
+## Day 10 integration boundaries
+
+The mock provider chooses approved tools deterministically; real integration tests still
+execute PostgreSQL analytics and document retrieval. In-process TestClient tests verify
+the API/service boundary separately from actual TCP tests. A session-owned loopback server
+supports typed-client and Streamlit AppTest requests through FastAPI, orchestration,
+registry, real restricted database access and evidence serialization. Owned resources are
+closed at teardown. Mocked HTTP tests remain useful component checks, not full-system proof.
+
+Native local preparation creates owned, separate synthetic dev/test databases using the
+existing migration/seed infrastructure. Integration mutations require a dedicated target
+and explicit acknowledgement, with cleanup restricted to owned schemas. The doctor checks
+readiness without writes or model calls. Neither health nor capabilities proves SQL
+readiness. Missing reader configuration caused the observed normal-startup SQL failure;
+earlier explicitly configured test backends did not establish normal-startup readiness.
+See [testing.md](testing.md) for commands, verification labels and measured results.
 
 ## Frontend and agent HTTP flow
 

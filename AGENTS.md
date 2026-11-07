@@ -9,7 +9,9 @@ Day 8 strengthens secret screening, provider error safety, worker cancellation/c
 message budgets, partial/conflicting evidence reporting and correlated telemetry.
 Day 9 adds local Streamlit chat, a safe agent HTTP endpoint and a shared CLI/API request
 lifecycle. Keep orchestration server-side; frontend state is display history only.
-No persistent agent memory, public deployment or Day 10–14 features are part of Day 9.
+Day 10 adds read-only doctor diagnostics, owned native dev/test preparation and automated
+real PostgreSQL/HTTP/Streamlit workflow verification. No persistent memory, public deployment
+or Day 11–14 implementation is included.
 Read GOALS.md, PLANS.md,
 docs/architecture.md, and docs/progress.md before changing scope. Stop after the
 requested milestone; later milestones require a new request. User instructions
@@ -97,4 +99,12 @@ repository. Use five focused commits: shared lifecycle, API/contracts, frontend/
 tests, and documentation. Live API usage remains separately unapproved. Keep local servers
 on loopback; the HTTP agent endpoint has no authentication/rate limiting and is not a
 public production service. Do not run live requests on startup, mode changes or reruns.
-Stop after Day 9 verification. Day 10 requires a separate request.
+Day 9 was completed and pushed in five focused commits.
+
+The user has explicitly approved committing and pushing Day 10 in focused groups.
+Preserve existing
+databases; integration mutations require explicit acknowledgement and a dedicated test
+target, with cleanup limited to generated schemas. Never print or commit .env/.local
+credentials. A mock provider must execute real tools in real integration tests; mocked
+HTTP/DB tests do not establish full-system readiness. Label verified boundaries explicitly.
+Stop after Day 10. Day 11 evaluation/performance work requires a new request.
