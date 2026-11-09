@@ -6,7 +6,7 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 10 real integration verification and local diagnostics.** FastAPI, PostgreSQL, synthetic data,
+**Current status: Day 11 reproducible evaluation and benchmarking.** FastAPI, PostgreSQL, synthetic data,
 five read-only analytics tools, document retrieval, and the direct OpenAI SDK adapter are
 implemented. The six-tool workflow is mock/protocol verified; actual live API verification
 remains pending. The local Streamlit chat calls a typed agent HTTP endpoint, with tool
@@ -372,6 +372,23 @@ Tool await cancellation cannot kill a running worker thread; CLI shutdown can ou
 deadline. See [agent behavior and limitations](docs/agent.md).
 
 ## Development roadmap
+
+Day 11 adds a versioned 38-case benchmark, independent fixture-derived facts, tool/retrieval/
+citation metrics, reliability/performance measurements and JSON/Markdown reports. It reuses
+the existing agent request lifecycle and real tools with a deterministic mock provider.
+
+```sh
+.venv/bin/python -m querypilot.cli eval --mode mock --output reports/evaluation/day11
+.venv/bin/python -m querypilot.cli eval --category documents --limit 1 --output reports/evaluation/doc-smoke
+```
+
+SQL evaluation requires the exact prepared synthetic fixture and restricted reader.
+The full benchmark currently passes **24/38 cases** and exits 1 while preserving its
+reports; the one-case document smoke exits 0. Failed cases expose mock routing/filtering
+limitations. Mock scores and timings do not measure live LLM accuracy or latency.
+Semantic faithfulness and claim-level citation precision are **NOT EVALUATED**; live
+OpenAI evaluation remains unverified and `eval --mode live` is rejected. Generated reports
+are ignored. See [evaluation definitions and limitations](docs/evaluation.md).
 
 Day 10 diagnosed the observed top-products failure: the normal backend had no reader
 configuration, while Day 9's temporary verification server received one explicitly.

@@ -1,9 +1,11 @@
 # Development roadmap
 
-Days 1–9 are implemented and pushed. Day 10 diagnoses SQL setup, adds safe readiness
+Days 1–10 are implemented and pushed. Day 10 diagnoses SQL setup, adds safe readiness
 checks and repeatable local dev/test preparation, and automates actual PostgreSQL/HTTP/UI
 verification. Results are recorded in docs/progress.md. Live OpenAI behavior remains
 separately pending. The user has approved Day 10 commits and push to the existing repository.
+Day 11 adds evaluation/benchmarking with actual tools and mock provider; live evaluation
+and semantic judgments remain unverified. The user has now approved Day 11 commits and push.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -19,8 +21,8 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 8 | Credential/trust boundaries, cancellation, budgets, evidence integrity and telemetry | Adversarial and prior SQL/API/provider/search regressions; dependency advisory check |
 | 9 | Local Streamlit chat and safe agent HTTP integration | API/client/AppTest, startup and actual mock HTTP/database demonstrations |
 | 10 | Completed real integration coverage, SQL diagnostics and local readiness | 383 passed; 48 real PostgreSQL cases; actual HTTP/UI workflows; live OpenAI unverified |
-| 11 | Agent evaluations | Tool choice, factual support, injection scenarios |
-| 12 | Docker Compose | Startup and restricted credentials |
+| 11 | Agent evaluation and benchmarking | 38 cases; tested metrics/reports; real fixture and documents; mock weaknesses retained |
+| 12 | Docker Compose & GitHub Actions CI | Preview only; await the next milestone request |
 | 13 | GitHub Actions and deployment docs | CI and reproducible setup |
 | 14 | Portfolio review and demonstration | Acceptance review and documented limitations |
 
@@ -145,3 +147,16 @@ public hosting or Day 10 infrastructure is added.
 
 Day 11 preview is Agent Evaluation & Performance Metrics; no evaluation/benchmark
 framework or optimization work is included in Day 10.
+
+## Day 11 implementation and review groups
+
+1. Versioned dataset and independent Decimal/policy reference builder.
+2. Deterministic tool/retrieval/factual/citation metrics and unit tests.
+3. Existing-service runner, exact restricted-reader fixture verification and instrumentation.
+4. Safe JSON/Markdown reporting and bounded eval CLI; live execution deliberately unavailable.
+5. Real PostgreSQL repeatability/report regressions and retained HTTP/UI/security coverage.
+6. Documentation of measured results, failures, denominators and unmeasured semantics.
+
+No new project dependency, second agent, judge, Docker/CI or optimization is introduced.
+The benchmark's failed cases remain visible; mock routing is unchanged. Prepare focused
+commits under the user's approval, now received. Stop after Day 11; Day 12 remains a preview.

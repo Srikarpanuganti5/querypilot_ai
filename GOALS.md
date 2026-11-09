@@ -160,3 +160,15 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Safe actionable diagnostics, retained security regressions, honest coverage/results reporting.
 - Verification matrix distinguishes real database, mock provider, mock HTTP, UI and pending live checks.
 - No destructive reset, fake revenue fallback, Day 11 work or unapproved commit/push.
+
+## Day 11 acceptance criteria
+
+- Versioned 30–50-case synthetic benchmark with independent fixture/policy references.
+- Existing shared agent path, counted mock provider, real registry/reader/document retrieval.
+- Validated dataset and exact read-only fixture gate; no database mutation or fake results.
+- Tested tool, retrieval, factual-literal, citation, reliability and performance metrics.
+- Denominators, category breakdowns, failed cases and reproducibility metadata in reports.
+- CLI writes safe JSON/Markdown with explicit exits and category/K/limit options.
+- Semantic entailment/claim precision NOT EVALUATED; live OpenAI not verified or invoked.
+- Preserve security and real SQL/API/UI tests; report measured results honestly.
+- No mock tuning to inflate scores, new dependency, Docker/CI or unapproved commit/push.

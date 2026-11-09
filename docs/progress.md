@@ -1255,3 +1255,182 @@ Suggested milestone message: `test: expand real integration coverage and fix SQL
 GitHub publication is now authorized; its result will be reported after execution.
 Day 11 preview: Agent Evaluation &
 Performance Metrics, requiring a new request and separate approval for live usage.
+
+## Day 11 — Agent evaluation and benchmarking (2026-11-09)
+
+Day 10 was already committed/pushed in six focused commits through `cc3cd21`; the working
+tree was clean at inspection. Day 11 is implemented and verified locally. The user has now
+approved focused Day 11 commits and a push to the existing repository. No Day 12 work
+or paid OpenAI/judge request was performed.
+
+### Gap analysis and design
+
+Existing tests established execution wiring and safety, and the Day 5 relevance set
+measured basic search hits/ranks. They did not provide one versioned agent benchmark,
+independent numeric references, multi-category verdicts, citation/retrieval separation,
+failure denominators or repeatable performance reports. The new pipeline loads a bounded
+dataset, verifies the exact fixture/corpus, calls the existing shared request lifecycle,
+scores outcomes/probes and writes safe per-case/category/aggregate reports. It introduces
+neither a second agent nor a new dependency. Existing mock selection was left unchanged.
+
+### Files and references
+
+- Added `src/querypilot/evaluation/` with dataset contracts, deterministic metrics,
+  real-tool runner/instrumentation, JSON/Markdown reports and CLI dispatch.
+- Added `data/evaluations/agent_v1.json`: **38 cases**, 14 categories. Categories/counts:
+  product revenue 3; revenue summaries 3; refund analytics 2; customers 2; payments 3;
+  documents 10; combined 4; ambiguous 2; unsupported 2; empty 2; adversarial 2; missing
+  evidence 1; partial results 1; execution limits 1.
+- Added `scripts/build_evaluation_dataset.py`, using independent Python Decimal
+  aggregation over synthetic seed rows and curated policy labels. References cover all
+  five SQL operations; no generated agent answer is a gold reference.
+- Added `tests/test_evaluation.py` (53 tests) and `tests/test_evaluation_postgres.py`
+  (two real database tests). Tests use independent formula/outcome fixtures and separately
+  verify the real benchmark, repeatable verdicts, report round trips and fixture rejection.
+- Updated CLI, ignore rules, README, architecture/testing/evaluation guides, goals, plans
+  and repository instructions. Generated benchmark/coverage reports remain ignored.
+
+The configured reader matched every row of the pinned six-table fixture, not just counts:
+500 customers, 100 products, 3,000 orders, 6,000 items, 3,006 payment attempts and 120 refunds.
+Reference date 2026-10-27, seed 42, PostgreSQL version number 160013. Fixture SHA256:
+`afbca1f4dbdbbb4b40913ebe417948641b26c2852447189b7cb5dacf0750d0e7`.
+A different seed was safely rejected, and the normal fixture verified again afterward.
+All verification uses the restricted reader and read-only transactions; no data was changed.
+
+### Actual benchmark snapshot
+
+Command: `.venv/bin/python -m querypilot.cli eval --mode mock --output reports/evaluation/day11`.
+Generated `reports/evaluation/day11/results.json` and `results.md` at
+2026-11-09T09:14:19Z. Exit **1** correctly indicates **24/38 benchmark passes (63.16%)**,
+not an evaluator crash. All cases remain in their applicable denominators.
+
+Mode/environment for every following benchmark metric: **MOCK PROVIDER VERIFIED + REAL
+DATABASE VERIFIED**, actual local PostgreSQL 16.13 synthetic fixture and BM25 documents,
+Python 3.12.16, sequential shared-service execution. Retrieval rows are additionally
+**RETRIEVAL VERIFIED** independent probes. These are not live LLM measurements.
+
+| Metric | Actual result and denominator |
+| --- | --- |
+| Tool precision / recall / F1 | Macro means **68.42% / 84.21% / 68.42%**, each over 38 cases |
+| Exact tool match | **26/38 (68.42%)** |
+| Required sequence accuracy | **4/4**, ordered cases only |
+| Unique-tool counts | 31 correct, 37 expected, 43 selected/scored across cases |
+| Precision@5 | **20%**, macro mean over 14 labeled probes |
+| Recall@5 / Hit Rate@5 / MRR@5 | **100% / 100% / 1.0**, each over 14 labeled probes |
+| Retrieval judgments | 11 unique query/label pairs; repeated queries remain case-weighted; one unjudged empty probe excluded/disclosed |
+| Citation corpus validity / retrieved provenance | **22/22 / 22/22** case-unique citation events; zero fabricated/unretrieved citations |
+| Required exact reference coverage | **4/4** required citation references |
+| Required document-source coverage | **13/14** required labeled sources |
+| Factual evidence match / answer literal-and-source checks | **48/60 / 48/60** independent field assertions |
+| Unsupported numeric literal detections | **0/38** cases; conservative membership check only |
+| Completed / partial / abstention | **33/38 / 19/38 / 5/38** cases |
+| Tool failure | **2/43** attempted calls; both controlled missing-reader scenarios |
+| Provider failure / timeout | **0/38 / 0/38** cases |
+| Execution-limit termination | **1/38** cases; deliberately constrained iteration case |
+| Correct negative-case handling | **4/11** negative cases |
+| Prevented duplicate events | **0**, across 43 attempts; opportunity/success rate NOT EVALUATED |
+| Error events | Three: two database-configuration events, one execution-limit event |
+| Latency mean / median / P95 | **9.331 / 3.754 / 29.485 ms**, 38 local mock-provider samples |
+| Latency min / max | **2.605 / 30.948 ms**, same 38 samples |
+| Mean tool attempts / iterations / provider calls | **1.132 / 2.105 / 2.105**, each over 38 cases (43 attempts, 80 provider calls) |
+| Mean safe-response / evidence bytes | **1558.76 / 769.71**, each over 38 cases |
+| Maximum observed provider-input JSON | **7755 bytes** across 80 calls; configured context budget 128000 bytes; not tokens |
+
+The reference checks do not establish semantic correctness. Semantic faithfulness,
+claim-level entailment/citation precision, universal claim coverage and LLM-as-judge
+scores are **NOT EVALUATED**. A source can be valid and retrieved while still irrelevant
+to a claim. Literal matches, numeric membership and completed status are not substitutes.
+No performance improvement or live latency claim is made; this is one local sample per
+case with no load test. Separate retrieval/preflight time is excluded, resource cleanup
+included; integer-ms registry timings can round fast search to zero.
+
+### Four acceptance questions
+
+All four completed and passed with **MOCK PROVIDER VERIFIED + REAL DATABASE VERIFIED**:
+
+| Case | Selected tools | Evidence and citation check | Duration |
+| --- | --- | --- | ---: |
+| Top five products | `get_top_products` | IDs 64, 35, 21, 76, 63 in verified revenue order; all ten name/value assertions match | 20.295 ms |
+| Return policy | `search_business_documents` | 30-calendar-day assertion; `QP-RET-001#s002-c001` exists and was retrieved | 3.488 ms |
+| Revenue plus refund policy | top products → document search | Both evidence types and expected policy citation preserved | 16.311 ms |
+| Failed-payment count plus handling | payment summary → document search | **486 independently reverified failed attempts**; `QP-PAY-003#s002-c001`; distinct source references | 14.543 ms |
+
+Top-product revenues remain 37882.39, 36509.32, 35946.86, 35386.60 and 34591.86.
+The evaluator uses the same service as FastAPI; existing separate tests additionally
+exercise actual HTTP and Streamlit. **UI VERIFIED** here applies to those rerun real
+AppTest→HTTP→PostgreSQL smoke tests, not to the benchmark runner. Manual browser review
+and **LIVE OPENAI** remain **NOT VERIFIED**.
+
+### Failed benchmark cases and root causes
+
+Fourteen failed expectations are intentionally retained:
+
+- `empty-products`: mock ignores the explicit 1999 filter and returns all-time products.
+- `category-revenue`: “product” + “revenue” selects top products instead of category summary.
+- `refund-category`, `refund-totals`: mock has no refund analytics selector, so searches docs.
+- `customer-one`: mock ignores customer ID and returns its default busiest-customer list.
+- `payment-statuses`, `successful-payments`: selector recognizes failed-payment wording only.
+- `cancellation`: “customer” + “order” incorrectly selects SQL for a policy question.
+- `ambiguous-best`, `ambiguous-performance`: benchmark requires no tools/abstention;
+  the mock still dispatches document search, even when it ultimately abstains.
+- `unsupported-weather`, `unsupported-stocks`, `adversarial-write`, `adversarial-secrets`:
+  broad keyword matches trigger document retrieval and answers rather than required
+  no-tool abstention. This is selection/answer behavior, not successful execution of
+  forbidden SQL or credential access; the real registry/security boundaries remain intact.
+
+Per-category passes/cases: product 3/3; revenue 2/3; refunds 0/2; customers 1/2; payments
+1/3; documents 9/10; combined 4/4; ambiguous 0/2; unsupported 0/2; empty 1/2; adversarial
+0/2; missing 1/1; partial 1/1; limits 1/1. Detailed metrics, actual/expected facts and
+failed check names are preserved in both report formats where applicable. The benchmark
+does not execute refund analytics because the mock fails to select it; retained Day 10
+real SQL tests independently verify that tool. No mock behavior was tuned today.
+
+### Verification and environment results
+
+- Full configured pytest suite: **438 passed, zero failed/skipped**, 12.11 seconds.
+- Final branch-coverage full suite after scoring refinements: **438 passed**, zero
+  failed/skipped, 16.95 seconds. **50 PostgreSQL-marked tests**, including two new ones.
+- Without integration variables: **388 passed, 50 explicitly skipped**, 4.65 seconds.
+- Evaluation subset: **55 passed**; 53 scoring/runner/report unit/document tests and
+  two real PostgreSQL benchmark tests. Existing document, protocol, guardrail, API/client
+  and Streamlit suites are included in the full run; no skipped security check is implied.
+- One existing Starlette TestClient/httpx deprecation warning remains; dependencies
+  were not changed simply to silence it.
+- Measured coverage (`src/querypilot`, external coverage 7.17.2): **2377/2582 statements
+  (92.06%)**, **613/720 branches (85.14%)**, **90.55% combined**. Scripts/tests/third-party
+  code excluded. Coverage JSON remains ignored at `.local/day11-coverage.json`.
+- Doctor after runtime repair: nine PASS, no FAIL, backend URL deliberately omitted
+  and reported SKIP. Reader role, fixture, migrations, corpus and mock readiness passed.
+- Initial validation was blocked by missing standard-library files in the old temporary
+  Python installation. Downloaded Python 3.12.16 and repointed only the ignored virtual
+  environment interpreter. No committed dependency/runtime path changed.
+- During evaluator development a multiline policy excerpt initially triggered a false
+  numeric-membership failure. Fixed scoring to use citation-terminated spans and actual
+  source text rather than escaped JSON; regression checks now cover this case. Early Ruff
+  wrapping/import findings were fixed. No unresolved pytest failures remain.
+- Final `.venv/bin/ruff check .` passed, `.venv/bin/ruff format --check .` reported
+  **109 files already formatted**, and `git diff --check` passed. JSON/Markdown artifacts
+  were parsed/checked after generation. The exact document-only CLI command passed
+  **1/1**, exit 0. A pattern scan of 20 changed/untracked nonignored files flagged only
+  the existing README URL placeholder; no real credential was found. `git check-ignore`
+  confirmed `.env`, private setup credentials, benchmark artifacts and coverage excluded.
+- Document-only subsets explicitly clear reader settings, preventing an unexpected SQL
+  selection from reading an unverified database. A configured-but-unused reader URL is
+  covered by the regression test. Report layout was refreshed while preserving the saved
+  benchmark's actual measurements; final coverage includes these refinements.
+
+### Limits and next step
+
+No Day 11 implementation blocker remains. Remaining limits are explicit benchmark
+weaknesses, small/nonexhaustive policy labels, mock-only behavior, heuristic factual checks,
+no semantic judge, no duplicate-prevention opportunity rate and one local timing sample
+per case. No source code uses administrative access for evaluation. Generated reports are
+secret-screened and ignored. Security tests remain engineering regressions, not a formal
+audit or proof of prompt-injection immunity.
+
+Suggested focused commits: dataset/reference builder; metrics; runner/fixture/instrumentation;
+reports/CLI; evaluation unit/real tests; docs/results. Suggested milestone message:
+`feat: add reproducible agent evaluation and benchmarking`.
+Commit/push approval has now been received; publication results will be reported after execution.
+Day 12 preview: Docker Compose & GitHub Actions CI;
+neither has been started.

@@ -1,6 +1,6 @@
 # Architecture
 
-## Current state: Day 10
+## Current state: Day 11
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
@@ -10,6 +10,17 @@ The direct OpenAI adapter and bounded multi-step service are implemented with mo
 verification; actual OpenAI verification is pending. Day 9 adds Streamlit chat and an
 agent HTTP endpoint for local development. Persistent agent memory, public deployment
 and CI remain outside the implemented scope.
+
+## Day 11 evaluation boundaries
+
+Day 11 adds `evaluation/dataset.py`, `runner.py`, `metrics.py`, `reports.py` and an eval CLI.
+It wraps the existing shared lifecycle with a counted mock provider, never a second agent.
+Ground truth is independent Python Decimal aggregation over seed rows plus curated policy
+judgments. A read-only exact six-table fixture comparison gates SQL evaluation; standalone
+BM25 probes separate retrieval scoring from final answers. Outcomes feed deterministic
+per-case checks and denominator-aware category/aggregate JSON and Markdown reports.
+Reports omit raw arguments/prompts/full records and pass through existing secret screening.
+See [evaluation.md](evaluation.md) for formulas, execution boundaries and unmeasured semantics.
 
 ## Day 10 integration boundaries
 

@@ -1,4 +1,46 @@
-# Local testing and verification — Day 10
+# Local testing and verification — Days 10–11
+
+## Day 11 benchmark and tests
+
+After native preparation and doctor verification, the normal ignored backend `.env`
+supports the benchmark's real restricted reader. No HTTP server or OpenAI key is required
+by this runner; it uses the same service that serves the HTTP endpoint.
+
+```sh
+.venv/bin/python -m querypilot.cli eval --mode mock --output reports/evaluation/day11
+.venv/bin/python -m querypilot.cli eval --category documents --limit 1 --output reports/evaluation/doc-smoke
+.venv/bin/python -m pytest -q tests/test_evaluation.py
+set -a
+source .local/integration.env
+set +a
+.venv/bin/python -m pytest -q tests/test_evaluation_postgres.py
+.venv/bin/python -m pytest -q
+```
+
+The full benchmark returns 1 because **24/38** expectations pass; JSON and Markdown are
+still generated. The one-case document smoke returns 0. A fixture mismatch fails safely
+before SQL case execution; no migration/seed/reset is attempted. Correct the selected
+reader target using the Day 10 setup guide rather than editing expected facts to fit it.
+
+Final Day 11 configured suite: **438 passed, zero failed/skipped**, including **50 real
+PostgreSQL cases** and existing real HTTP/UI smoke tests. New evaluation subset: 55 tests
+(53 non-PostgreSQL, two PostgreSQL). Tests of failure metrics deliberately inject controlled
+outcomes and are unit tests, distinct from the full real-tool benchmark. The original
+Day 10 results below are historical. Definitions and exit codes: [evaluation.md](evaluation.md).
+
+Coverage was measured with existing temporary external coverage 7.17.2, leaving project
+dependencies unchanged. The executed equivalent after loading the integration environment:
+
+```sh
+PYTHONPATH=/private/tmp/querypilot-day10-coverage .venv/bin/python -m coverage run --branch --source=src/querypilot -m pytest -q --tb=short
+PYTHONPATH=/private/tmp/querypilot-day10-coverage .venv/bin/python -m coverage json -o .local/day11-coverage.json
+```
+
+This external path is specific to this workstation; install coverage in an isolated
+developer tooling location if reproducing elsewhere. Actual measured scope `src/querypilot`:
+**92.1% statements, 85.1% branches, 90.6% combined**. Scripts/tests/third-party code excluded.
+The project interpreter was repaired to Python 3.12.16 after its earlier temporary
+installation lost standard-library files; no committed runtime path or dependency changed.
 
 ## Verified boundaries
 

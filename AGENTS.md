@@ -11,7 +11,10 @@ Day 9 adds local Streamlit chat, a safe agent HTTP endpoint and a shared CLI/API
 lifecycle. Keep orchestration server-side; frontend state is display history only.
 Day 10 adds read-only doctor diagnostics, owned native dev/test preparation and automated
 real PostgreSQL/HTTP/Streamlit workflow verification. No persistent memory, public deployment
-or Day 11–14 implementation is included.
+or Day 12–14 implementation is included. Day 11 adds a versioned benchmark reusing the
+shared request lifecycle, exact read-only fixture checks, independent retrieval probes,
+deterministic metrics and safe reports. Do not alter mock routing or gold references to
+inflate results. Distinguish framework tests from benchmark passes and live model quality.
 Read GOALS.md, PLANS.md,
 docs/architecture.md, and docs/progress.md before changing scope. Stop after the
 requested milestone; later milestones require a new request. User instructions
@@ -108,3 +111,7 @@ target, with cleanup limited to generated schemas. Never print or commit .env/.l
 credentials. A mock provider must execute real tools in real integration tests; mocked
 HTTP/DB tests do not establish full-system readiness. Label verified boundaries explicitly.
 Stop after Day 10. Day 11 evaluation/performance work requires a new request.
+
+The user has now requested Day 11 evaluation and benchmarking only. Day 10 was pushed
+in six commits ending cc3cd21. The user has now explicitly approved committing and
+pushing Day 11 in focused groups. Do not run paid API/judge requests. Stop before Day 12 Docker/CI.
