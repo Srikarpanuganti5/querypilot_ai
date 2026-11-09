@@ -15,8 +15,13 @@ def main() -> None:
 
         doctor_main(sys.argv[2:])
         return
+    if sys.argv[1:2] == ["eval"]:
+        from querypilot.evaluation.cli import main as eval_main
+
+        eval_main(sys.argv[2:])
+        return
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["ask", "doctor"])
+    parser.add_argument("command", choices=["ask", "doctor", "eval"])
     parser.parse_args()
 
 
