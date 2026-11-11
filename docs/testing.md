@@ -15,9 +15,10 @@ case regressions, skip prevention and private configuration. Prior milestone cou
 are historical. Existing actual HTTP/Streamlit tests run in this full suite.
 
 Docker tests use `compose.test.yaml` with the separate `querypilot_day12_test` project and
-database. Builds, startup, four container workflows, outages, restart and volume persistence
-are **NOT VERIFIED** until Docker is running. Both Compose definitions validate without a
-daemon. See [containers.md](containers.md) for exact test/start/stop commands and limits.
+database. The follow-up verification on 2026-11-11 built both runtime images and verified
+startup, all four workflows, benchmark gate, outage recovery, restart, persistence and
+shutdown in the main isolated Compose stack. This does not claim the separate Docker test
+profile or GitHub workflow ran. See [containers.md](containers.md) for commands and limits.
 GitHub Actions is configured; remote execution has not occurred for these uncommitted files.
 
 ## Day 11 benchmark and tests

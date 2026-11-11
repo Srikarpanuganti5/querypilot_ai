@@ -2,10 +2,11 @@
 
 ## Status and scope
 
-Implementation is available, but **DOCKER NOT VERIFIED** on the development workstation:
-the Docker client exists, its daemon socket is absent, and permission to start Docker
-Desktop was declined. No images/containers/volumes were created here. Compose configuration
-validation and local CI tests are distinct from container builds/runtime proof.
+**DOCKER VERIFIED on 2026-11-11:** the user made Docker Desktop available and authorized
+isolated verification. Both images built, all four workflows and the protected benchmark
+cases passed, and outage/restart/persistence/shutdown checks passed. An unquoted tmpfs
+option list required a one-line quoting fix. The stack is now shut down with its database
+volume retained. Details and nonfatal warnings are in [progress.md](progress.md).
 **CI CONFIGURED — REMOTE EXECUTION NOT VERIFIED** until the workflow actually runs on
 GitHub. **LIVE OPENAI NOT VERIFIED**; containers and CI default to deterministic mock mode.
 No cloud deployment or image publishing is included.
@@ -53,8 +54,8 @@ Both runtime images currently share the project's one runtime dependency graph, 
 Streamlit in the backend. This preserves the authoritative lock and avoids introducing a
 second dependency specification solely for image size. No image-size reduction is claimed.
 The image tags are version-pinned, not digest-pinned; reproducibility of base OS layers is
-therefore bounded by registry tag stability. Actual image availability/builds are not yet
-verified locally. `.dockerignore` is an allowlist: no `.env`, credentials, `.local`, virtual
+therefore bounded by registry tag stability. Actual image builds are now verified locally.
+`.dockerignore` is an allowlist: no `.env`, credentials, `.local`, virtual
 environments, Git metadata, private data or generated benchmark reports enter the context.
 
 Compose application services use read-only root filesystems, dropped capabilities,
@@ -173,8 +174,9 @@ make down
 ```
 
 Shutdown preserves named data. The CI workflow additionally compares volume creation times
-across restart. Until these execute against Docker, workflows/recovery/persistence remain
-**NOT VERIFIED** for containers. Independent native results are in [progress.md](progress.md).
+across restart. Workflows/recovery/persistence are **DOCKER VERIFIED** as of the follow-up
+run on 2026-11-11; the commands above are also useful
+for future rechecks. Native and Docker results are recorded in [progress.md](progress.md).
 
 References: [Compose startup conditions](https://docs.docker.com/compose/how-tos/startup-order/),
 [uv Docker integration](https://docs.astral.sh/uv/guides/integration/docker/),

@@ -6,9 +6,9 @@ verification. Results are recorded in docs/progress.md. Live OpenAI behavior rem
 separately pending. The user has approved Day 10 commits and push to the existing repository.
 Day 11 adds evaluation/benchmarking with actual tools and mock provider; live evaluation
 and semantic judgments remain unverified. The user has now approved Day 11 commits and push.
-Day 12 container/CI implementation and native validation are present, but required Docker
-build/runtime verification is blocked by the stopped daemon. GitHub CI remote execution
-is unverified. Day 12 is not fully complete; the user has approved commits/push of the current work.
+Day 12 implementation was pushed; follow-up Docker builds, workflows, gate, recovery and
+persistence now pass. A one-line Compose tmpfs fix and verification records remain uncommitted.
+The user approved pushing the follow-up and checking remote CI; its result remains pending.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -25,7 +25,7 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 9 | Local Streamlit chat and safe agent HTTP integration | API/client/AppTest, startup and actual mock HTTP/database demonstrations |
 | 10 | Completed real integration coverage, SQL diagnostics and local readiness | 383 passed; 48 real PostgreSQL cases; actual HTTP/UI workflows; live OpenAI unverified |
 | 11 | Agent evaluation and benchmarking | 38 cases; tested metrics/reports; real fixture and documents; mock weaknesses retained |
-| 12 | Docker Compose & GitHub Actions CI | Native tests/gate pass; Compose/actionlint valid; Docker builds/runtime and remote CI unverified |
+| 12 | Docker Compose & GitHub Actions CI | Native checks and actual Docker workflows/gate/recovery/persistence pass; remote CI unverified |
 | 13 | Deployment & End-to-End Demo | Preview only; requires a new milestone request |
 | 14 | Portfolio review and demonstration | Acceptance review and documented limitations |
 

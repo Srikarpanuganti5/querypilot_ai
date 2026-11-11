@@ -29,9 +29,10 @@ applies existing migrations/seed and verifies restricted reader access before th
 starts. `/health` is liveness; `/ready` verifies database/document readiness and returns
 503 when unavailable. Backend receives no administrative database credentials.
 
-**DOCKER NOT VERIFIED:** the local daemon is stopped, so builds/startup/runtime checks are
-incomplete. **CI CONFIGURED — REMOTE EXECUTION NOT VERIFIED.** Native parity checks pass;
-configuration files alone do not prove Docker or GitHub execution. See
+**DOCKER VERIFIED (2026-11-11):** both builds, four real container workflows, the protected
+benchmark gate, outage/restart recovery, persistent storage and clean shutdown passed.
+A one-line Compose tmpfs quoting fix remains uncommitted.
+Track the current remote result in [GitHub Actions](https://github.com/Srikarpanuganti5/querypilot_ai/actions/workflows/ci.yml). See
 [container setup, recovery and exact commands](docs/containers.md).
 
 For native CI parity after preparing the dedicated test environment:
@@ -417,9 +418,10 @@ the existing agent request lifecycle and real tools with a deterministic mock pr
 ```
 
 SQL evaluation requires the exact prepared synthetic fixture and restricted reader.
-The full benchmark currently passes **24/38 cases** and exits 1 while preserving its
+The full benchmark currently passes **24/38 cases**, with **14 known failures**, and exits 1 while preserving its
 reports; the one-case document smoke exits 0. Failed cases expose mock routing/filtering
 limitations. Mock scores and timings do not measure live LLM accuracy or latency.
+This benchmark does not establish production-level agent accuracy.
 Semantic faithfulness and claim-level citation precision are **NOT EVALUATED**; live
 OpenAI evaluation remains unverified and `eval --mode live` is rejected. Generated reports
 are ignored. See [evaluation definitions and limitations](docs/evaluation.md).

@@ -181,6 +181,6 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Least-privilege SHA-pinned CI, full coverage/test checks and no silently skipped DB cases.
 - Reviewed case-level protection for the 24 passing Day 11 benchmark cases.
 - Actual builds, four container workflows, restart/persistence and clean shutdown required.
-- Native validation passes; Docker runtime/build verification remains blocked by the stopped
-  daemon, and GitHub workflow execution is unverified. Full Day 12 completion is not claimed.
+- Native validation and follow-up Docker build/runtime/recovery/persistence checks pass.
+  GitHub workflow execution remains unverified; the Compose fix awaits commit approval.
 - No API charges, image publication, cloud deployment, volume deletion or unapproved Git push.

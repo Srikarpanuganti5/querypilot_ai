@@ -122,3 +122,11 @@ skips are failures. No paid API, image publishing, cloud deployment or Day 13 wo
 The user has now explicitly approved committing and pushing Day 12 in focused groups.
 Docker daemon startup was declined; do not bypass that decision. Mark container runtime
 and GitHub execution unverified until actually executed. Keep native databases untouched.
+
+On 2026-11-11 the user authorized follow-up verification with Docker Desktop running.
+Docker builds/workflows/gate/recovery/persistence/shutdown now pass. A one-line tmpfs
+quoting fix and documentation updates were initially uncommitted. The user has now approved
+reviewing, committing and pushing this follow-up and verifying GitHub Actions remotely.
+Keep all 14 benchmark failures visible; mock results do not establish production agent accuracy.
+Remote CI and live OpenAI remain unverified until actually checked. The stack was shut down and
+its isolated database volume retained; unrelated resources were left alone.

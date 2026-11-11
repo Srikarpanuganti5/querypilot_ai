@@ -1582,3 +1582,99 @@ Suggested groups: Dockerfiles/Compose;
 initialization/configuration/readiness; GitHub CI/parity; benchmark gate/baselines;
 integration tests; documentation. Do not remove any existing volume. Day 13 preview is
 Deployment & End-to-End Demo; no Day 13 feature or deployment has started.
+
+## Day 12 follow-up — Actual Docker verification (2026-11-11)
+
+The user confirmed Docker Desktop was available and explicitly authorized verification
+using only this project's isolated resources, with no commit/push. Initial Git status was
+clean at `867b6d3`. The sandbox initially denied socket access; approved Docker access
+confirmed daemon **29.9.3**, Compose **v5.7.0**. No existing Day 12 containers/volumes were
+present. Native data and unrelated Docker resources were not touched.
+
+### Builds and confirmed startup defect
+
+`docker compose --env-file .env.docker build backend frontend` succeeded with the existing
+lock and Dockerfiles: `querypilot-backend:day12` and `querypilot-frontend:day12`.
+Initial startup failed with `invalid mount path: 'noexec' mount path must be absolute`.
+The flow-style YAML tmpfs list was unquoted, so its comma-separated options became separate
+mount entries. Changed only that configuration line to
+`tmpfs: ["/tmp:rw,noexec,nosuid,size=64m"]`; no business/agent code was changed.
+The retry `up --no-build --wait --wait-timeout 180` succeeded. The newly created volume
+was preserved through this failure and every subsequent check.
+
+### DOCKER VERIFIED / REAL DATABASE VERIFIED / MOCK PROVIDER VERIFIED
+
+- PostgreSQL, backend and frontend were healthy; setup exited **0**. Migration revision
+  is **0001**. Existing setup successfully migrated/seeded and later repeated idempotently.
+- Exact six-table fixture verification passed with reference 2026-10-27, seed 42, counts
+  500 customers/100 products/3000 orders/6000 items/3006 payments/120 refunds. Fixture hash
+  remains `afbca1f4dbdbbb4b40913ebe417948641b26c2852447189b7cb5dacf0750d0e7`.
+- Runtime UID **10001**, writer configuration absent, live disabled, transaction read-only
+  **on**. The existing role audit confirmed SELECT-only privileges and prohibited ownership,
+  membership, DDL and write grants were absent.
+- Published `localhost:18000/health`, `/ready`, `localhost:18501/` and `/_stcore/health`
+  all returned **200**. Frontend-to-backend internal routing also worked in the smoke check.
+- All four acceptance workflows passed through actual backend HTTP with real SQL/BM25 tools,
+  then were submitted again through published port 18000 with matching completed statuses
+  and selected tools. Return policy cited `QP-RET-001#s002-c001`; combined revenue/refund
+  preserved both evidence types; payment handling cited `QP-PAY-003#s002-c001` separately.
+- Independent code-owned SQL returned top product IDs/revenues:
+  **64/37882.39, 35/36509.32, 21/35946.86, 76/35386.60, 63/34591.86**.
+  Independent SQL count confirmed **486 failed payment attempts** and matched API evidence.
+- Existing benchmark gate ran inside the backend using writable `/tmp/day12-gate`:
+  **38 cases, 24 passing, 14 known failures, all 24 protected cases passing, zero regressions**.
+  It passed again after restart. No baseline, gold label, provider or scoring code changed.
+- Stopped only this project's DB: `/health` remained **200**, `/ready` became **503**.
+  Restarted DB/backend/frontend and waited for all health checks to recover. Setup again
+  exited 0; all four workflows and the gate passed after recovery.
+- Compared the named volume's name/creation timestamp and PostgreSQL's persistent system
+  identifier before/after restart: all unchanged. Exact fixture verification also matched,
+  establishing persistent storage rather than merely recreated equivalent fixture values.
+
+### Logs, report export and clean shutdown
+
+Bounded credential scans before/after shutdown found **no configured passwords or credential-like
+patterns**. The pre-shutdown log review found zero ERROR/FATAL/traceback markers. One nonfatal Alpine initialization warning
+was observed: `no usable system locales were found`. No locale-related functional failure
+occurred in the verified fixture/tool results. This is log screening, not a security audit.
+
+Two `docker compose cp` attempts could not find report files on the tmpfs mount, despite
+their being readable inside the container. Recovered both via `exec cat` without code
+changes; safe reports are ignored at `.local/day12-container-gate.json` and `.md`.
+The storage identity snapshot is ignored at `.local/day12-docker-before.json`.
+
+`stop --timeout 40` completed: PostgreSQL and Streamlit exited **0**; backend exited **143**
+(SIGTERM). Backend logs confirmed the final lifecycle stop and Uvicorn shutdown completion
+after its last start; no OOM kill or forced-kill indication occurred. This is graceful
+signal termination, not an unexplained crash. The final credential scan passed again.
+`down --timeout 40` then removed only the project's stopped containers/network. No project
+containers remain. **The named PostgreSQL volume is retained**, created at
+2026-11-11T06:17:22Z. No volume deletion command was used.
+
+### Scope and remaining verification
+
+Local Docker verification requested in this follow-up is complete after the tmpfs fix.
+Ruff lint/format and whitespace checks passed; 121 files already formatted. A full pytest
+rerun was not needed for this configuration-only fix; the prior native 456-test result is
+historical, not a new test execution claim. The actual Docker runtime, four acceptance
+workflows and 38-case gate supply the new evidence.
+
+Remote GitHub CI, the separate Docker test-profile suite, manual browser acceptance and
+live OpenAI were not run here and remain **NOT VERIFIED**. The stack is intentionally
+shut down after verification. The one-line Compose fix and verification documentation
+remain **uncommitted/unpushed**, pending explicit approval. No unrelated functionality,
+deployment, image publishing or Day 13 work was introduced.
+
+### Follow-up publication approval and remote CI inspection
+
+The user subsequently approved organized commits/push and remote CI verification, with
+an explicit requirement to keep the 14 known benchmark failures visible. The earlier
+Day 10/11/12 milestone commits were already pushed; only follow-up changes require new
+commits. Lint, formatting, whitespace and configured-secret checks passed; private settings
+and reports remain ignored. README now explicitly states that 24/38 mock-provider passes
+do not establish production-level agent accuracy. Gold labels and baseline are unchanged.
+
+Inspected remote run 42970429230 at commit 867b6d3: the quality job passed, including
+PostgreSQL tests/coverage/gate; the image build step passed but Compose smoke failed with
+the same unquoted tmpfs option-list error. This is the verified local fix being published.
+The new run's actual result will be reported after push, without assuming it is green.
