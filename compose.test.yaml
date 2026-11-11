@@ -1,0 +1,27 @@
+# Always use -p querypilot_day12_test with this override; never the development volume.
+services:
+  db:
+    environment:
+      POSTGRES_DB: querypilot_compose_test
+  setup:
+    environment:
+      DATABASE_URL: postgresql+psycopg://querypilot_setup:${QP_SETUP_PASSWORD:?Set setup password}@db:5432/querypilot_compose_test
+      READER_DATABASE_URL: postgresql+psycopg://querypilot_reader:${QP_READER_PASSWORD:?Set reader password}@db:5432/querypilot_compose_test
+  backend:
+    environment:
+      READER_DATABASE_URL: postgresql+psycopg://querypilot_reader:${QP_READER_PASSWORD:?Set reader password}@db:5432/querypilot_compose_test
+  tests:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      target: test
+    environment:
+      DATABASE_URL: postgresql+psycopg://querypilot_setup:${QP_SETUP_PASSWORD:?Set setup password}@db:5432/querypilot_compose_test
+      READER_DATABASE_URL: postgresql+psycopg://querypilot_reader:${QP_READER_PASSWORD:?Set reader password}@db:5432/querypilot_compose_test
+      TEST_DATABASE_URL: postgresql+psycopg://querypilot_setup:${QP_SETUP_PASSWORD:?Set setup password}@db:5432/querypilot_compose_test
+      TEST_READER_DATABASE_URL: postgresql+psycopg://querypilot_reader:${QP_READER_PASSWORD:?Set reader password}@db:5432/querypilot_compose_test
+      QUERYPILOT_TEST_DATABASE_ACK: allow-isolated-schemas
+      QUERYPILOT_AGENT_LIVE_ENABLED: "false"
+    depends_on:
+      setup:
+        condition: service_completed_successfully

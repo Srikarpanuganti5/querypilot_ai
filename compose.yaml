@@ -1,18 +1,78 @@
+name: querypilot_day12
+x-reader: &reader
+  READER_DATABASE_URL: postgresql+psycopg://querypilot_reader:${QP_READER_PASSWORD:?Run scripts/prepare_docker.py}@db:5432/${QP_DATABASE:-querypilot_compose}
+  QUERYPILOT_DOCUMENTS_PATH: data/documents
+  QUERYPILOT_AGENT_LIVE_ENABLED: "false"
+x-app: &app
+  restart: unless-stopped
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs: [/tmp:rw,noexec,nosuid,size=64m]
+  stop_grace_period: 40s
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:16.13-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
-    ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+      POSTGRES_USER: querypilot_setup
+      POSTGRES_PASSWORD: ${QP_SETUP_PASSWORD:?Run scripts/prepare_docker.py}
+      POSTGRES_DB: ${QP_DATABASE:-querypilot_compose}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
     volumes:
-      - querypilot_postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
-      interval: 5s
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 3s
       timeout: 3s
-      retries: 20
+      retries: 30
+  setup:
+    <<: *app
+    restart: "no"
+    image: querypilot-backend:day12
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    environment:
+      <<: *reader
+      DATABASE_URL: postgresql+psycopg://querypilot_setup:${QP_SETUP_PASSWORD:?Run scripts/prepare_docker.py}@db:5432/${QP_DATABASE:-querypilot_compose}
+      QUERYPILOT_SETUP_ACK: synthetic-only
+    depends_on:
+      db:
+        condition: service_healthy
+    command: [python, -m, querypilot.db.bootstrap]
+    healthcheck:
+      disable: true
+  backend:
+    <<: *app
+    image: querypilot-backend:day12
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    environment:
+      <<: *reader
+      QUERYPILOT_LOG_LEVEL: ${QUERYPILOT_LOG_LEVEL:-INFO}
+      QUERYPILOT_AGENT_MAX_ITERATIONS: ${QUERYPILOT_AGENT_MAX_ITERATIONS:-5}
+      QUERYPILOT_AGENT_MAX_TOOL_CALLS: ${QUERYPILOT_AGENT_MAX_TOOL_CALLS:-10}
+      QUERYPILOT_AGENT_TIMEOUT_SECONDS: ${QUERYPILOT_AGENT_TIMEOUT_SECONDS:-90}
+    ports:
+      - "127.0.0.1:${QP_BACKEND_PORT:-18000}:8000"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+  frontend:
+    <<: *app
+    image: querypilot-frontend:day12
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    environment:
+      QUERYPILOT_API_BASE_URL: http://backend:8000
+    ports:
+      - "127.0.0.1:${QP_FRONTEND_PORT:-18501}:8501"
+    depends_on:
+      backend:
+        condition: service_healthy
 volumes:
-  querypilot_postgres:
+  postgres_data:
