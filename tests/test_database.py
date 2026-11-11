@@ -116,6 +116,10 @@ def test_missing_or_unsupported_url_is_safe(url: str | None) -> None:
 
 
 def test_reader_requires_distinct_configuration() -> None:
-    settings = Settings(_env_file=None, database_url="postgresql+psycopg://writer@localhost/db")
+    settings = Settings(
+        _env_file=None,
+        database_url="postgresql+psycopg://writer@localhost/db",
+        reader_database_url=None,
+    )
     with pytest.raises(DatabaseError, match="READER_DATABASE_URL"):
         create_database(settings, reader=True)

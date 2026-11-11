@@ -56,6 +56,7 @@ def test_openapi(client: TestClient) -> None:
     assert document["info"]["version"] == "0.1.0"
     assert set(document["paths"]) == {
         "/health",
+        "/ready",
         "/api/v1/info",
         "/api/v1/agent/ask",
         "/api/v1/agent/capabilities",
