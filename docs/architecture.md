@@ -1,6 +1,6 @@
 # Architecture
 
-## Current state: Day 11
+## Current state: Day 12
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
@@ -9,7 +9,27 @@ by migration, seed, and verification commands. API initialization remains databa
 The direct OpenAI adapter and bounded multi-step service are implemented with mock/protocol
 verification; actual OpenAI verification is pending. Day 9 adds Streamlit chat and an
 agent HTTP endpoint for local development. Persistent agent memory, public deployment
-and CI remain outside the implemented scope.
+remain outside the implemented scope. CI is configured but remote execution is unverified.
+
+## Container architecture and CI
+
+Compose isolates a named PostgreSQL volume from native data. PostgreSQL connection health
+gates a one-shot administrative setup container; setup reuses Alembic/seed/verify and reader
+audits. Its successful exit gates the backend, and backend `/ready` gates Streamlit.
+Frontend HTTP uses `backend:8000`. Backend receives only restricted reader access; frontend
+receives only its API origin. Apps run non-root with read-only root filesystems and dropped
+capabilities. Only application ports are published, bound to loopback.
+
+`/health` stays database-independent. `/ready` invokes read-only doctor checks in a sync
+request worker, returning safe status codes for configuration/schema/seed/permission/corpus
+failures. It performs no provisioning. Exact fixture comparison belongs to setup and
+evaluation; it is not repeated on every readiness request.
+
+CI uses locked dependencies, an ephemeral PostgreSQL 16 instance with generated credentials,
+full tests/coverage, mandatory original PostgreSQL case IDs and the reviewed Day 11 gate.
+A separate image job builds both images, configures container smoke/recovery/persistence/log
+checks and shuts down without deleting volumes. No images are published. Configuration and
+native results do not establish container or GitHub readiness. See [containers.md](containers.md).
 
 ## Day 11 evaluation boundaries
 

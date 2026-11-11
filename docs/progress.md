@@ -1434,3 +1434,151 @@ reports/CLI; evaluation unit/real tests; docs/results. Suggested milestone messa
 Commit/push approval has now been received; publication results will be reported after execution.
 Day 12 preview: Docker Compose & GitHub Actions CI;
 neither has been started.
+
+## Day 12 — Containers, CI and reproducible setup (2026-11-10)
+
+Day 11 was already committed/pushed through `efa5d5a`; the working tree was clean at
+inspection. Day 12 implementation and native verification are present, but **Day 12 is
+not fully complete**: mandatory Docker build/runtime verification is blocked by the absent
+Docker Desktop daemon socket. Starting Docker Desktop was declined, and that decision was
+respected. No images, containers or Docker volumes were created/deleted locally. There
+was no cloud deployment, image publication, paid API call, commit or push.
+
+### Inspection and implementation plan
+
+Read repository specifications and guides, inspected the lock, actual startup/configuration,
+Alembic, seed/reader setup, doctor/evaluation paths and original database-only Compose file.
+Correct entry points are `uvicorn querypilot.main:app`, Streamlit's existing app file,
+`querypilot.cli doctor` and the existing shared agent service. Planned and implemented:
+non-root images, isolated Compose setup, separate readiness, exact original PostgreSQL
+test enforcement, reviewed case-level benchmark baseline and local/remote CI parity.
+
+### Files and boundaries
+
+- Added `docker/Dockerfile.backend` (runtime/test targets), `docker/Dockerfile.frontend`
+  and allowlisted `.dockerignore`. Runtime stages exclude dev tools/uv and use UID 10001.
+  Both images reuse one locked runtime graph; no separate frontend lock or size claim.
+- Replaced old `compose.yaml` with the isolated `querypilot_day12` stack: PostgreSQL 16.13,
+  one-shot setup, reader-only backend and frontend. Added `compose.test.yaml` for a separate
+  project/test database. App roots are read-only, capabilities dropped, no socket/host-source
+  mounts, and no PostgreSQL host port. Backend/frontend host ports default 18000/18501.
+- Added `db/bootstrap.py` reusing existing Alembic, seed, verifier, exact fixture comparison
+  and reader audit. Only empty schemas migrate automatically; existing different schema/data
+  is refused. Setup receives writer access, application runtime does not.
+- Added root `/ready` through existing read-only doctor checks; `/health` stays liveness.
+  Missing reader, unreachable/authentication failures, missing tables and empty seed return
+  503. No HTTP request provisions data. Updated the explicit OpenAPI route contract test.
+- Added `scripts/prepare_docker.py`, updated `.env.example`; private generated `.env.docker`
+  is mode 0600, URL-safe, ignored, preserved on rerun and separate from native `.env`.
+- Added reviewed `baseline_day11.json`, unchanged gold dataset, and `evaluation/gate.py`.
+  It checks dataset/corpus/fixture identity, all case IDs, protected passes and known failures.
+  Added `postgres_required.json` containing all original 50 node IDs, and a JUnit checker
+  that rejects skipped/failed/missing cases even when aggregate counts could look adequate.
+- Added `.github/workflows/ci.yml`, `scripts/ci_database.py`, `scripts/run_checks.py`,
+  `scripts/check_ci_results.py`, `scripts/check_compose_logs.py`, Makefile targets and
+  `services/container_smoke.py`. The workflow is PR/main, contents-read, immutable action
+  hashes, no image publishing or paid API. Random ephemeral CI database credentials are
+  masked before output. Docker smoke verifies real HTTP, frontend, outages, restart,
+  volume identity, exact data and bounded log screening when it can actually execute.
+- Added 14 unit and four real PostgreSQL tests in the deployment modules. Updated one
+  existing missing-reader test to specify `reader_database_url=None`, preventing an
+  inherited CI reader URL from invalidating that unit test's intended missing-config state.
+- Updated README, architecture/database/testing/evaluation/security guides, goals, plans,
+  instructions and new [containers.md](containers.md) with commands and honest boundaries.
+
+The only new dependency is **development-only coverage 7.17.2**, previously used externally
+on Day 11. Lock resolution now has 63 packages; every pre-existing package version is
+unchanged. No secrets/private reports enter source control or the image build context.
+
+### Actual command results
+
+| Command/check | Result and boundary |
+| --- | --- |
+| Initial Git status | Clean, main at efa5d5a; Day 10/11 work preserved |
+| Docker version/info | Client/Compose installed, daemon socket absent; DOCKER NOT VERIFIED |
+| Start Docker Desktop | Permission declined; not retried or bypassed |
+| Backend `docker build` | Failed exit 1: cannot connect to daemon; no build verification |
+| Frontend `docker build` | Failed exit 1: cannot connect to daemon; no build verification |
+| Compose `up --build --wait --wait-timeout 180` | Failed exit 1: daemon unavailable |
+| Development/test `docker compose ... config --quiet` | Both passed, using private settings without printing resolved secrets |
+| `uv lock` and `uv sync --locked --extra dev` | Passed; only coverage added; original versions checked unchanged |
+| Focused deployment unit tests | 14 passed |
+| Focused real setup/readiness/gate tests | Four passed, REAL DATABASE VERIFIED |
+| `python scripts/run_checks.py` with acknowledged native test environment | Exit 0, LOCAL CI VERIFIED |
+| Complete suite under coverage | **456 passed, zero failed/skipped**, 22.41 seconds; includes actual native HTTP/Streamlit tests |
+| Required PostgreSQL verification | **54 executed**, including every original 50 node ID; JUnit checker passed |
+| Suite without integration variables | **402 passed, 54 explicitly skipped**, 4.67 seconds; this is not CI parity |
+| Doctor from parity command | Nine PASS, zero FAIL; backend URL intentionally omitted (one optional SKIP) |
+| Benchmark gate | 38 cases, 24 pass/14 known fail, **24 protected, zero regressions**, exit 0 |
+| Benchmark exact tool match | 26/38, unchanged; MOCK PROVIDER VERIFIED + REAL DATABASE VERIFIED |
+| `actionlint` 1.7.7 | Workflow passes local validation; temporary tool outside project dependencies |
+| Action SHA verification | checkout v4.2.2/setup-python v5.6.0 tags resolved independently to the pinned immutable hashes |
+| Final Ruff lint / format / whitespace | All pass; **121 files already formatted**; `git diff --check` clean |
+| Configured-secret scan | 37 changed/untracked nonignored files; zero matching configured secret values |
+| Resolved Compose policy checks | Reader-only backend, frontend API-origin-only environment, no PG host ports, app read-only roots/capability drops/no host mounts, distinct volume namespace all pass; configuration only |
+
+One existing Starlette TestClient/httpx deprecation warning remains. An initial parity run
+found the expected new `/ready` path missing from the old OpenAPI test and exposed the unit
+test's inherited-reader assumption; both were corrected without removing security assertions.
+Early Ruff line-wrapping findings were fixed. No unresolved pytest failure remains.
+
+Coverage measured across `src/querypilot`: **2482/2762 statements (89.86%)**, **633/752
+branches (84.18%)**, **88.65% combined**. Scripts/tests/third-party packages are excluded.
+The new container smoke module remains at 0% locally because Docker is unavailable; CLI
+checks run after pytest are also outside that coverage invocation. The lower aggregate
+than Day 11 is reported honestly; no unverified infrastructure code was excluded to inflate it.
+Reports remain ignored at `.local/ci-results.xml`, `.local/ci-coverage.json` and
+`reports/evaluation/gate/`.
+
+### Real database and failure/recovery evidence
+
+The new setup regression creates a randomly named owned database/role on the acknowledged
+test cluster, applies the existing initial migration, seeds the standard 500/100/3000/6000/
+3006/120 fixture, verifies reader access and repeats setup successfully. Runtime readiness
+also succeeds with writer configuration removed. Real missing-schema, empty-refund-table,
+wrong-password and unavailable-port checks fail safely. A deliberately altered fixture
+is refused without reset; cleanup targets only the newly created test database/role.
+Original dedicated database fixtures/business data remain intact.
+
+The four existing acceptance workflows passed through actual native HTTP and real tools
+in the full suite. Failed payments were independently checked as 486 for this fixture.
+These results are **REAL DATABASE VERIFIED / MOCK PROVIDER VERIFIED**, not container proof.
+New container smoke independently counts failed attempts and compares returned SQL evidence
+when Docker becomes available; it does not assume 486 for every database.
+
+Native UI regression coverage still includes actual AppTest→HTTP→PostgreSQL, and isolated
+frontend tests retain backend-unreachable diagnostics. Containerized UI reachability,
+backend-before-init ordering, restart/volume persistence, log screening and clean shutdown
+are configured but **NOT VERIFIED**. The database health probes use TCP explicitly to avoid
+accepting the temporary socket-only initialization server as fully started.
+
+### Benchmark regression policy and CI status
+
+The baseline is derived from the saved Day 11 report and reviewed published identities;
+CI never rebuilds it from current output. Unit tests demonstrate that swapping a protected
+pass with a new improvement still fails despite an unchanged aggregate. Identity mismatch,
+missing/duplicate cases and fully mocked mode are rejected. All 14 known failures remain
+visible; no gold label, mock router or answer template was weakened to improve scores.
+
+CI performs the same native-parity test/gate commands against an ephemeral PostgreSQL
+container, then separately builds and checks the full Compose stack. Runtime backend has
+only reader credentials; CI writer credentials are limited to synthetic setup/test fixtures.
+No key/secret environment dump is printed. Remote status is explicitly
+**CI CONFIGURED — REMOTE EXECUTION NOT VERIFIED**. Live OpenAI remains
+**LIVE OPENAI NOT VERIFIED**; no paid request was made.
+
+### Remaining blocker and next milestone
+
+The stopped Docker daemon blocks both image builds, all four containerized workflows,
+container health/outage checks, restart/persistence and shutdown verification. Exact
+commands are in [containers.md](containers.md); starting Docker and rerunning them is
+required before claiming Day 12 fully complete. Dockerfile syntax/dependency builds have
+not been established by Compose/actionlint checks alone. GitHub CI must separately execute
+after an approved push. These are verification gaps, not fabricated successes.
+
+The user approved committing/pushing the current Day 12 work on 2026-11-11, with Docker
+verification still incomplete. Publication results will be reported after execution.
+Suggested groups: Dockerfiles/Compose;
+initialization/configuration/readiness; GitHub CI/parity; benchmark gate/baselines;
+integration tests; documentation. Do not remove any existing volume. Day 13 preview is
+Deployment & End-to-End Demo; no Day 13 feature or deployment has started.

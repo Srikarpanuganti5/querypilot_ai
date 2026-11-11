@@ -1,5 +1,21 @@
 # Agent evaluation — Day 11
 
+## Day 12 reviewed regression gate
+
+`data/evaluations/baseline_day11.json` records the reviewed Day 11 dataset/corpus/fixture
+hashes, reference date/seed, source commit and explicit 24 passing/14 failing case IDs.
+`.venv/bin/python -m querypilot.evaluation.gate` runs the unchanged dataset against real
+tools and compares case verdicts. A previously protected pass becoming a failure blocks
+CI even if another case improves and the aggregate pass rate stays unchanged. Missing or
+duplicate cases, incompatible hashes/fixture/mode and infrastructure failures fail safely.
+
+Known failures are reported explicitly and do not require a perfect score for a green gate.
+New improvements are reported but become protected only through a reviewed baseline update.
+Never regenerate the baseline from current outputs during CI. A baseline change requires
+explicit review of identity, per-case outcomes and reasons; it must not change gold labels
+to match the mock. Native gate result: 24 protected, zero regressions, 14 known failures.
+This is a mock-provider regression contract, not live LLM or semantic-accuracy verification.
+
 ## Purpose and boundaries
 
 The benchmark measures the existing application rather than a second agent. The runner

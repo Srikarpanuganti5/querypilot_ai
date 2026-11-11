@@ -1,8 +1,29 @@
-# Security and reliability boundaries (through Day 10)
+# Security and reliability boundaries (through Day 12)
 
 This is an engineering review with deterministic adversarial tests and a dependency
 advisory check. It is not a formal security audit or penetration test. Only synthetic,
 publicly shareable data is supported. Actual live OpenAI behavior remains unverified.
+
+## Container and CI boundaries
+
+App images run as UID/GID 10001; Compose drops capabilities, prevents privilege escalation
+and uses read-only root filesystems with bounded temporary storage. No host source/Docker
+socket mounts, privileged containers or PostgreSQL host ports are configured. Credentials
+are generated in ignored mode-0600 `.env.docker`, excluded by an allowlisted build context,
+and never embedded in image layers. Resolved Compose/environment dumps must not be logged.
+
+Only setup receives administrative runtime credentials. The backend has reader access;
+frontend has only its API origin. Setup requires an explicit synthetic acknowledgement and
+refuses mismatched existing data/schema rather than resetting them. Native setup tests
+create/drop only their own random databases/roles. Readiness performs no writes.
+
+CI has contents-read permissions and SHA-pinned actions. Ephemeral credentials are generated
+and masked before output. Writer access is limited to synthetic CI setup/test fixtures,
+never the application runtime. Live configuration is disabled; no paid request is scheduled.
+The original PostgreSQL cases cannot silently skip, and the benchmark gate cannot hide a
+case regression behind aggregate gains. Bounded container log checks withhold raw contents.
+Container runtime enforcement and those log checks remain unverified locally while Docker
+is unavailable; static configuration/native tests are not a security audit.
 
 ## Day 10 isolation and diagnostics
 

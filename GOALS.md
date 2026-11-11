@@ -172,3 +172,15 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Semantic entailment/claim precision NOT EVALUATED; live OpenAI not verified or invoked.
 - Preserve security and real SQL/API/UI tests; report measured results honestly.
 - No mock tuning to inflate scores, new dependency, Docker/CI or unapproved commit/push.
+
+## Day 12 acceptance criteria and current limitation
+
+- Non-root backend/frontend images with locked dependencies and allowlisted build context.
+- Isolated PostgreSQL volume, one-shot existing migration/seed setup and SELECT-only runtime.
+- Separate liveness/readiness, bounded startup dependencies and reproducible configuration.
+- Least-privilege SHA-pinned CI, full coverage/test checks and no silently skipped DB cases.
+- Reviewed case-level protection for the 24 passing Day 11 benchmark cases.
+- Actual builds, four container workflows, restart/persistence and clean shutdown required.
+- Native validation passes; Docker runtime/build verification remains blocked by the stopped
+  daemon, and GitHub workflow execution is unverified. Full Day 12 completion is not claimed.
+- No API charges, image publication, cloud deployment, volume deletion or unapproved Git push.

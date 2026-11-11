@@ -20,14 +20,13 @@ DATABASE_URL=postgresql+psycopg://querypilot_owner:YOUR_ENCODED_PASSWORD@localho
 ```
 
 Replace placeholders locally; percent-encode special characters in the URL password.
-Compose reads the `POSTGRES_*` entries, while Python reads `DATABASE_URL`. Keep them
-consistent. `.env` is ignored. The example deliberately supplies no password. Optional
+Python reads `DATABASE_URL`; manual `POSTGRES_*` values describe your native setup.
+Day 12 Compose uses separate `.env.docker` inputs. `.env` is ignored. The example
+deliberately supplies no password. Optional
 pool settings use `QUERYPILOT_DB_POOL_SIZE`, `QUERYPILOT_DB_MAX_OVERFLOW`,
 `QUERYPILOT_DB_POOL_TIMEOUT`, and `QUERYPILOT_DB_STATEMENT_TIMEOUT_MS`.
 
 ```sh
-docker compose up -d db
-docker compose ps
 alembic upgrade head
 alembic current
 alembic check
@@ -35,12 +34,12 @@ python -m querypilot.db.seed --reference-date 2026-10-27 --random-seed 42
 python -m querypilot.db.verify --reference-date 2026-10-27 --random-seed 42
 ```
 
-Compose contains PostgreSQL 16 only, a persistent volume, loopback-only port binding, and
-a readiness check. No API deployment container is introduced. Credentials initialize
-only a new volume; changing `.env` does not rotate an existing role password.
-`docker compose down` preserves data. Do not remove volumes unless deliberately resetting
-the development dataset. A native PostgreSQL instance can be used instead by setting
-`DATABASE_URL`; migrations and seed commands are identical.
+The commands above target a configured native PostgreSQL instance. Day 12 replaces the
+original database-only Compose definition with an isolated full stack and one-shot setup
+using these same migration/seed functions. Use `.env.docker` and the internal `db` hostname,
+not native localhost URLs. PostgreSQL is not published to the host. Changing configuration
+does not rotate existing role passwords. Shutdown preserves the named volume; do not remove
+it without explicit authorization. See [containers.md](containers.md) for current commands.
 
 There is no automatic `create_all`. Migration `0001` creates all six tables and indexes
 in dependency order; downgrade reverses that order. Review generated migrations before

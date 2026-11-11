@@ -1,4 +1,24 @@
-# Local testing and verification — Days 10–11
+# Local testing and verification — Days 10–12
+
+## Day 12 CI parity and container prerequisites
+
+Load the existing `.local/integration.env` and run `.venv/bin/python scripts/run_checks.py`
+or `make ci`. It requires acknowledged distinct roles on a dedicated test target, runs all
+tests under branch coverage, rejects any skipped/failed test in JUnit, verifies every
+original PostgreSQL test ID and then runs doctor and the benchmark regression gate.
+Coverage 7.17.2 is now an explicit locked development dependency; no temporary external
+coverage path is needed. Existing package versions remain unchanged.
+
+Native result: **456 passed, zero skipped**, including **54 PostgreSQL tests** and the full
+original 50-case manifest. The 18 new tests cover setup/readiness, baseline identity and
+case regressions, skip prevention and private configuration. Prior milestone counts below
+are historical. Existing actual HTTP/Streamlit tests run in this full suite.
+
+Docker tests use `compose.test.yaml` with the separate `querypilot_day12_test` project and
+database. Builds, startup, four container workflows, outages, restart and volume persistence
+are **NOT VERIFIED** until Docker is running. Both Compose definitions validate without a
+daemon. See [containers.md](containers.md) for exact test/start/stop commands and limits.
+GitHub Actions is configured; remote execution has not occurred for these uncommitted files.
 
 ## Day 11 benchmark and tests
 

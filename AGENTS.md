@@ -11,7 +11,7 @@ Day 9 adds local Streamlit chat, a safe agent HTTP endpoint and a shared CLI/API
 lifecycle. Keep orchestration server-side; frontend state is display history only.
 Day 10 adds read-only doctor diagnostics, owned native dev/test preparation and automated
 real PostgreSQL/HTTP/Streamlit workflow verification. No persistent memory, public deployment
-or Day 12–14 implementation is included. Day 11 adds a versioned benchmark reusing the
+or Day 13–14 implementation is included. Day 11 adds a versioned benchmark reusing the
 shared request lifecycle, exact read-only fixture checks, independent retrieval probes,
 deterministic metrics and safe reports. Do not alter mock routing or gold references to
 inflate results. Distinguish framework tests from benchmark passes and live model quality.
@@ -115,3 +115,10 @@ Stop after Day 10. Day 11 evaluation/performance work requires a new request.
 The user has now requested Day 11 evaluation and benchmarking only. Day 10 was pushed
 in six commits ending cc3cd21. The user has now explicitly approved committing and
 pushing Day 11 in focused groups. Do not run paid API/judge requests. Stop before Day 12 Docker/CI.
+
+Day 12 is now requested: non-root images, isolated Compose setup/readiness, locked CI and
+a reviewed case-level benchmark gate. Preserve every original PostgreSQL test in CI;
+skips are failures. No paid API, image publishing, cloud deployment or Day 13 work.
+The user has now explicitly approved committing and pushing Day 12 in focused groups.
+Docker daemon startup was declined; do not bypass that decision. Mark container runtime
+and GitHub execution unverified until actually executed. Keep native databases untouched.

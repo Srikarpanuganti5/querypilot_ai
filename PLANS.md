@@ -1,11 +1,14 @@
 # Development roadmap
 
-Days 1–10 are implemented and pushed. Day 10 diagnoses SQL setup, adds safe readiness
+Days 1–11 are implemented and pushed. Day 10 diagnoses SQL setup, adds safe readiness
 checks and repeatable local dev/test preparation, and automates actual PostgreSQL/HTTP/UI
 verification. Results are recorded in docs/progress.md. Live OpenAI behavior remains
 separately pending. The user has approved Day 10 commits and push to the existing repository.
 Day 11 adds evaluation/benchmarking with actual tools and mock provider; live evaluation
 and semantic judgments remain unverified. The user has now approved Day 11 commits and push.
+Day 12 container/CI implementation and native validation are present, but required Docker
+build/runtime verification is blocked by the stopped daemon. GitHub CI remote execution
+is unverified. Day 12 is not fully complete; the user has approved commits/push of the current work.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -22,8 +25,8 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 9 | Local Streamlit chat and safe agent HTTP integration | API/client/AppTest, startup and actual mock HTTP/database demonstrations |
 | 10 | Completed real integration coverage, SQL diagnostics and local readiness | 383 passed; 48 real PostgreSQL cases; actual HTTP/UI workflows; live OpenAI unverified |
 | 11 | Agent evaluation and benchmarking | 38 cases; tested metrics/reports; real fixture and documents; mock weaknesses retained |
-| 12 | Docker Compose & GitHub Actions CI | Preview only; await the next milestone request |
-| 13 | GitHub Actions and deployment docs | CI and reproducible setup |
+| 12 | Docker Compose & GitHub Actions CI | Native tests/gate pass; Compose/actionlint valid; Docker builds/runtime and remote CI unverified |
+| 13 | Deployment & End-to-End Demo | Preview only; requires a new milestone request |
 | 14 | Portfolio review and demonstration | Acceptance review and documented limitations |
 
 ## Day 1 plan
@@ -160,3 +163,19 @@ framework or optimization work is included in Day 10.
 No new project dependency, second agent, judge, Docker/CI or optimization is introduced.
 The benchmark's failed cases remain visible; mock routing is unchanged. Prepare focused
 commits under the user's approval, now received. Stop after Day 11; Day 12 remains a preview.
+
+## Day 12 implementation and verification groups
+
+1. Dockerfiles/build context and separate development/test Compose projects.
+2. Explicit existing-migration/seed bootstrap, private environment helper and readiness.
+3. Least-privilege SHA-pinned GitHub workflow and CI parity/required-test verification.
+4. Reviewed Day 11 case-level regression baseline, identity guards and safe gate reports.
+5. Unit/real PostgreSQL setup, readiness, failure/recovery and baseline policy tests.
+6. Accurate container/native/remote verification documentation and setup commands.
+
+456 tests pass, including 54 real PostgreSQL cases and every original 50-case ID. The
+38-case benchmark still has 24 passes/14 known failures; no protected case regressed.
+Docker build/start attempts failed because the daemon socket is absent. Starting Desktop
+was declined; do not bypass that decision. Required image/workflow/restart/persistence
+verification remains incomplete. No volumes were removed. Prepare focused commits only
+under the user's approval, now received; no image publishing, remote deployment or Day 13 work is authorized.

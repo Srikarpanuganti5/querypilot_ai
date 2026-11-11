@@ -6,12 +6,46 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 11 reproducible evaluation and benchmarking.** FastAPI, PostgreSQL, synthetic data,
+**Current status: Day 12 container/CI configuration and native validation.** FastAPI, PostgreSQL, synthetic data,
 five read-only analytics tools, document retrieval, and the direct OpenAI SDK adapter are
 implemented. The six-tool workflow is mock/protocol verified; actual live API verification
 remains pending. The local Streamlit chat calls a typed agent HTTP endpoint, with tool
 traces, evidence and limitation notices. Document demos and API health/docs work without
 a database or API key. SQL questions require the actual synthetic reader database.
+
+## Docker quick start and CI
+
+```sh
+.venv/bin/python scripts/prepare_docker.py
+docker compose --env-file .env.docker config --quiet
+docker compose --env-file .env.docker up --build --wait --wait-timeout 180
+docker compose --env-file .env.docker exec -T backend python -m querypilot.services.container_smoke
+docker compose --env-file .env.docker down --timeout 40
+```
+
+Backend: http://127.0.0.1:18000; Streamlit: http://127.0.0.1:18501. PostgreSQL is internal.
+The distinct `querypilot_day12` project/volume preserves native databases. A one-shot job
+applies existing migrations/seed and verifies restricted reader access before the backend
+starts. `/health` is liveness; `/ready` verifies database/document readiness and returns
+503 when unavailable. Backend receives no administrative database credentials.
+
+**DOCKER NOT VERIFIED:** the local daemon is stopped, so builds/startup/runtime checks are
+incomplete. **CI CONFIGURED — REMOTE EXECUTION NOT VERIFIED.** Native parity checks pass;
+configuration files alone do not prove Docker or GitHub execution. See
+[container setup, recovery and exact commands](docs/containers.md).
+
+For native CI parity after preparing the dedicated test environment:
+
+```sh
+set -a
+source .local/integration.env
+set +a
+.venv/bin/python scripts/run_checks.py
+```
+
+This runs lint, formatting, the full suite with coverage, mandatory original PostgreSQL
+case checks, doctor and the reviewed case-level benchmark gate. No skipped test is accepted
+by CI. The gate preserves 24 previously passing cases while reporting all 14 known failures.
 
 ## Planned features
 
@@ -48,11 +82,11 @@ services, and configuration. See [architecture](docs/architecture.md) for bounda
 | Alembic | Versioned database schema migrations | Day 3 |
 | OpenAI Python SDK | Direct async Responses function calling, with bounded retries | Day 6 |
 | Streamlit | Interactive analytics interface | Day 9 |
-| Docker Compose, GitHub Actions | Service orchestration and CI | Later milestones |
+| Docker Compose, GitHub Actions | Isolated services and locked-dependency CI | Day 12; Docker/remote execution unverified |
 
 Runtime dependencies are FastAPI, Pydantic, Pydantic Settings, Uvicorn, SQLAlchemy,
 Psycopg (binary driver wheel), Alembic, the official OpenAI SDK, HTTPX and Streamlit.
-Development dependencies are Pytest and Ruff. Hatchling remains the isolated build dependency.
+Development dependencies are Pytest, Ruff and pinned coverage for CI measurement. Hatchling remains the isolated build dependency.
 Other libraries will be added when used. Uvicorn's base install supports `--reload`
 through polling, so no optional watcher or event-loop packages are required.
 
@@ -193,20 +227,20 @@ responses with logs. Never commit `.env`, API keys, passwords, or private data.
 
 Copy `.env.example` to `.env`, choose local database credentials, and set `DATABASE_URL`
 using `postgresql+psycopg://USER:ENCODED_PASSWORD@localhost:5432/querypilot`.
-The `POSTGRES_*` values configure Compose; keep them consistent with the URL. The
-example provides no password. See [database setup and accounting](docs/database.md).
+These are manual/native settings. The full Docker workflow uses separate `.env.docker`
+configuration and an internal service hostname. No password is supplied in examples.
+See [database setup and accounting](docs/database.md).
 
 ```sh
-docker compose up -d db
 alembic upgrade head
 alembic check
 python -m querypilot.db.seed --reference-date 2026-10-27 --random-seed 42
 python -m querypilot.db.verify --reference-date 2026-10-27 --random-seed 42
 ```
 
-Only PostgreSQL runs in Compose. A persistent volume preserves data; no full application
-deployment is included. Native PostgreSQL is also supported through `DATABASE_URL`.
-No tables are created automatically: run Alembic explicitly before seeding.
+The commands above target an explicitly configured native database. Day 12 Compose instead
+runs PostgreSQL, setup, backend and frontend, with setup invoking the same migration/seed
+mechanisms. API startup never automatically creates tables.
 
 The reference fixture contains **500 customers, 100 products, 3,000 orders, 6,000 items,
 3,006 payments, and 120 refunds**. It covers the preceding twelve calendar months relative
@@ -440,7 +474,8 @@ Live OpenAI verification remains pending; no paid requests were made on Day 8.
 Day 1 establishes the foundation. Day 2 adds FastAPI and health; Day 3 introduces
 PostgreSQL and synthetic data; Days 4–5 add analytics and document tools; Day 6 introduces
 LLM tool calling; Days 7–8 add orchestration and reliability; Day 9 adds Streamlit.
-Later milestones cover broader tests, evaluations, Docker, CI, and deployment docs.
+Day 12 adds Docker/CI configuration; required Docker verification is blocked by the local
+daemon. Day 13 deployment and end-to-end demonstration require a separate request.
 See [PLANS.md](PLANS.md) for the detailed proposed sequence.
 
 ## Project documents
