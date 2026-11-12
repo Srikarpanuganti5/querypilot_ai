@@ -1,8 +1,30 @@
-# Security and reliability boundaries (through Day 12)
+# Security and reliability boundaries (through Day 13)
 
 This is an engineering review with deterministic adversarial tests and a dependency
 advisory check. It is not a formal security audit or penetration test. Only synthetic,
 publicly shareable data is supported. Actual live OpenAI behavior remains unverified.
+
+## Public-exposure review and decision
+
+Day 13 permits only a private/local demo. The app has no public authentication or
+authorization, per-client rate limiting, HTTPS/WSS termination or protected diagnostics.
+Do not expose the app/DB directly, change loopback bindings or open a public tunnel until
+these essential controls are implemented, reviewed and explicitly approved. No complex
+authentication system was added because the chosen strategy is local screen sharing.
+
+Existing 65536-byte HTTP limits, strict 4000-character questions, bounded agent/tool budgets,
+read-only SQL and the resource-limited demo override reduce particular risks; they are not
+ingress rate limiting or a proof of isolation against all untrusted public users. CORS is
+an exact-origin browser policy, not access control. Readiness/docs/capabilities/traces can
+disclose operational/business information even when credentials are redacted. Restrict them
+before any public launch. A future private SSH demo still requires approved host/user access.
+
+The smoke CLI validates an operator-supplied plain HTTP(S) origin, refuses credentials or
+redirects, bounds JSON responses and always requests mock mode. Direct database verification
+is explicit and read-only; it must target the same backend database. Reports omit origins,
+credentials, raw records and provider text and pass through SecretGuard. No live calls,
+public resource creation or automatic Git publication occur. See [deployment.md](deployment.md)
+for the full control matrix and prerequisites. This review is not a formal security audit.
 
 ## Container and CI boundaries
 
@@ -22,8 +44,8 @@ and masked before output. Writer access is limited to synthetic CI setup/test fi
 never the application runtime. Live configuration is disabled; no paid request is scheduled.
 The original PostgreSQL cases cannot silently skip, and the benchmark gate cannot hide a
 case regression behind aggregate gains. Bounded container log checks withhold raw contents.
-Container runtime enforcement and those log checks remain unverified locally while Docker
-is unavailable; static configuration/native tests are not a security audit.
+Container runtime and log screening were verified locally in Day 12 and repeated with the
+Day 13 private profile; these checks are not a formal security audit.
 
 ## Day 10 isolation and diagnostics
 
