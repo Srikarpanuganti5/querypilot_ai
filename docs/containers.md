@@ -7,9 +7,25 @@ isolated verification. Both images built, all four workflows and the protected b
 cases passed, and outage/restart/persistence/shutdown checks passed. An unquoted tmpfs
 option list required a one-line quoting fix. The stack is now shut down with its database
 volume retained. Details and nonfatal warnings are in [progress.md](progress.md).
-**CI CONFIGURED — REMOTE EXECUTION NOT VERIFIED** until the workflow actually runs on
-GitHub. **LIVE OPENAI NOT VERIFIED**; containers and CI default to deterministic mock mode.
+Day 12's follow-up CI passed remotely on f43b45e. Current uncommitted Day 13 changes are
+**CI CONFIGURED — REMOTE EXECUTION NOT VERIFIED**. **LIVE OPENAI NOT VERIFIED**;
+containers and CI default to deterministic mock mode.
 No cloud deployment or image publishing is included.
+
+## Day 13 private-demo override
+
+Use `make demo-up`, `make demo-smoke` and `make demo-down` to apply `compose.demo.yaml`
+without a second deployment architecture. It retains the existing project/volume and
+loopback-only published ports. CPU/memory/PID/log bounds and `QP_DEMO_API_ORIGIN` apply to
+this private profile; internal HTTP defaults to `http://backend:8000`. No public auth/TLS
+configuration is added. Public deployment is blocked as described in [deployment.md](deployment.md).
+
+The host-facing command is `python -m querypilot.cli smoke-test --backend-url http://127.0.0.1:18000`.
+The container-facing `make demo-smoke` uses the internal origin and `--verify-database` so
+the restricted reader and tested backend target the same containerized PostgreSQL database.
+The previous smoke module remains compatible. Volume credentials are preserved; different
+fixtures still fail rather than being overwritten. Day 13 recovery/persistence verification
+and measured limits are recorded in progress. Manual browser checklist: [demo.md](demo.md).
 
 ## Quick start
 

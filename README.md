@@ -6,12 +6,41 @@ tool calls, retrieve synthetic business information, and explain answers with ev
 
 Example: **“Which five products generated the highest revenue last month?”**
 
-**Current status: Day 12 container/CI configuration and native validation.** FastAPI, PostgreSQL, synthetic data,
+**Current status: Day 13 private deployment readiness and demo verification.** FastAPI, PostgreSQL, synthetic data,
 five read-only analytics tools, document retrieval, and the direct OpenAI SDK adapter are
 implemented. The six-tool workflow is mock/protocol verified; actual live API verification
 remains pending. The local Streamlit chat calls a typed agent HTTP endpoint, with tool
 traces, evidence and limitation notices. Document demos and API health/docs work without
 a database or API key. SQL questions require the actual synthetic reader database.
+
+## Private demo and deployment readiness
+
+The recommended interview deployment is local Docker with screen sharing, using synthetic
+data and mock mode. No public cloud resource or paid API is required. Public exposure is
+blocked until authentication/access control, rate limiting and HTTPS are addressed.
+See [deployment options and cost research](docs/deployment.md) and the
+[2–3 minute demo script, recording plan and manual browser checklist](docs/demo.md).
+
+```sh
+.venv/bin/python scripts/prepare_docker.py
+make demo-up
+make demo-smoke
+.venv/bin/python -m querypilot.cli smoke-test --backend-url http://127.0.0.1:18000
+# Automated UI against actual container HTTP; does not establish manual browser acceptance:
+.venv/bin/python scripts/verify_demo_ui.py --backend-url http://127.0.0.1:18000
+# When finished; database volume is retained:
+make demo-down
+```
+
+`compose.demo.yaml` reuses the existing stack and adds CPU/memory/PID/log limits. The new
+smoke command validates liveness/readiness, API contract and four mock acceptance workflows.
+`make demo-smoke` also verifies the exact configured database and independently compares SQL
+results. Host-side direct DB verification is explicitly skipped unless `--verify-database`
+is requested with matching reader settings. No credentials or raw replies are printed.
+
+Manual browser acceptance and live OpenAI remain **NOT VERIFIED**. Day 12 remote CI passed
+on `f43b45e`; unpushed Day 13 changes have not executed remotely. The local benchmark still
+passes **24/38**, with **14 known failures**, and does not measure production-level accuracy.
 
 ## Docker quick start and CI
 

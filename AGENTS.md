@@ -130,3 +130,12 @@ reviewing, committing and pushing this follow-up and verifying GitHub Actions re
 Keep all 14 benchmark failures visible; mock results do not establish production agent accuracy.
 Remote CI and live OpenAI remain unverified until actually checked. The stack was shut down and
 its isolated database volume retained; unrelated resources were left alone.
+
+Day 13 is now requested: private deployment readiness, bounded mock smoke CLI, actual
+container/UI verification and operator/demo plans. Reuse the existing stack and preserve
+all 14 known benchmark failures. Public exposure is blocked without access control,
+rate limiting and HTTPS. No paid resources/API calls, image publication
+or Day 14 work are authorized. On 2026-11-12 the user approved committing and pushing
+Day 13 in focused groups and checking GitHub Actions remotely. Automated AppTest
+must not be labeled manual browser acceptance. Day 12 CI passed remotely at f43b45e;
+uncommitted Day 13 changes have no remote verification yet.

@@ -173,7 +173,7 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Preserve security and real SQL/API/UI tests; report measured results honestly.
 - No mock tuning to inflate scores, new dependency, Docker/CI or unapproved commit/push.
 
-## Day 12 acceptance criteria and current limitation
+## Day 12 acceptance criteria
 
 - Non-root backend/frontend images with locked dependencies and allowlisted build context.
 - Isolated PostgreSQL volume, one-shot existing migration/seed setup and SELECT-only runtime.
@@ -182,5 +182,18 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Reviewed case-level protection for the 24 passing Day 11 benchmark cases.
 - Actual builds, four container workflows, restart/persistence and clean shutdown required.
 - Native validation and follow-up Docker build/runtime/recovery/persistence checks pass.
-  GitHub workflow execution remains unverified; the Compose fix awaits commit approval.
+  GitHub workflow execution passed remotely at f43b45e after the approved Compose fix push.
 - No API charges, image publication, cloud deployment, volume deletion or unapproved Git push.
+
+## Day 13 acceptance criteria
+
+- Document a researched private/local deployment choice and practical cost alternatives.
+- Reuse Compose with environment-driven origins, private bindings and resource/log bounds.
+- Block public exposure pending authentication/authorization, rate limiting and HTTPS.
+- Provide `smoke-test` using existing HTTP/service/evidence paths and explicit mock mode.
+- Verify four container workflows and independent configured-reader SQL with no writes.
+- Exercise actual UI-to-container HTTP and distinguish AppTest from manual browser checks.
+- Keep current 14 benchmark failures visible; no production-level accuracy claim.
+- Reuse full security/reliability tests, preserve original required PostgreSQL cases and gate.
+- Record actual performance/coverage, technical demo and separate recording/operator plans.
+- No cloud provisioning, paid calls, Git publication or Day 14 polish without approval.

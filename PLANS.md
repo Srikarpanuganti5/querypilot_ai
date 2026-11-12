@@ -1,14 +1,15 @@
 # Development roadmap
 
-Days 1–11 are implemented and pushed. Day 10 diagnoses SQL setup, adds safe readiness
+Days 1–12 are implemented and pushed. Day 10 diagnoses SQL setup, adds safe readiness
 checks and repeatable local dev/test preparation, and automates actual PostgreSQL/HTTP/UI
 verification. Results are recorded in docs/progress.md. Live OpenAI behavior remains
 separately pending. The user has approved Day 10 commits and push to the existing repository.
 Day 11 adds evaluation/benchmarking with actual tools and mock provider; live evaluation
 and semantic judgments remain unverified. The user has now approved Day 11 commits and push.
-Day 12 implementation was pushed; follow-up Docker builds, workflows, gate, recovery and
-persistence now pass. A one-line Compose tmpfs fix and verification records remain uncommitted.
-The user approved pushing the follow-up and checking remote CI; its result remains pending.
+Day 12's Docker fix and verification were pushed through f43b45e; both remote CI jobs pass.
+Day 13 adds private-demo configuration, bounded smoke CLI, acceptance verification and demo
+plans. The user approved focused Day 13 commits and push on 2026-11-12. Current
+remote CI evidence applies to Day 12, not these changes. Manual browser/live API remain pending.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -25,8 +26,8 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 9 | Local Streamlit chat and safe agent HTTP integration | API/client/AppTest, startup and actual mock HTTP/database demonstrations |
 | 10 | Completed real integration coverage, SQL diagnostics and local readiness | 383 passed; 48 real PostgreSQL cases; actual HTTP/UI workflows; live OpenAI unverified |
 | 11 | Agent evaluation and benchmarking | 38 cases; tested metrics/reports; real fixture and documents; mock weaknesses retained |
-| 12 | Docker Compose & GitHub Actions CI | Native checks and actual Docker workflows/gate/recovery/persistence pass; remote CI unverified |
-| 13 | Deployment & End-to-End Demo | Preview only; requires a new milestone request |
+| 12 | Docker Compose & GitHub Actions CI | Native and Docker checks pass; both remote CI jobs passed at f43b45e |
+| 13 | Private deployment readiness & end-to-end demo | 470 local tests; real container smoke/UI/gate/recovery; manual browser and Day 13 remote CI pending |
 | 14 | Portfolio review and demonstration | Acceptance review and documented limitations |
 
 ## Day 1 plan
@@ -179,3 +180,16 @@ Docker build/start attempts failed because the daemon socket is absent. Starting
 was declined; do not bypass that decision. Required image/workflow/restart/persistence
 verification remains incomplete. No volumes were removed. Prepare focused commits only
 under the user's approval, now received; no image publishing, remote deployment or Day 13 work is authorized.
+
+## Day 13 implementation and review groups
+
+1. Resource-limited private demo override, configurable frontend origin and Make targets.
+2. Bounded, safe, explicit mock smoke CLI using existing API/evidence/fixture infrastructure.
+3. Public-exposure control review: no public deployment without access control/TLS/rate limits.
+4. New smoke contract/transport and real PostgreSQL tests; actual AppTest→container HTTP script.
+5. Researched deployment comparison, operator checklist, 2–3 minute demo and recording plan.
+6. Actual result/progress updates and CI smoke configuration for a later approved push.
+
+No dependency additions, second agent, provider changes, cloud resources or Day 14 work.
+The 24/38 mock benchmark is not production accuracy. Public/manual/live verification is
+not implied by local smoke success. The user approved focused commits and push on 2026-11-12; check actual remote CI afterward.

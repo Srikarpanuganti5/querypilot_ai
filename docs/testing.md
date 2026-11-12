@@ -1,4 +1,32 @@
-# Local testing and verification — Days 10–12
+# Local testing and verification — Days 10–13
+
+## Day 13 smoke and acceptance
+
+`make demo-up` applies the private resource-limited override to the existing stack.
+`make demo-smoke` runs the new CLI in the backend with independent configured-reader SQL
+verification. A host probe uses:
+
+```sh
+.venv/bin/python -m querypilot.cli smoke-test --backend-url http://127.0.0.1:18000
+.venv/bin/python scripts/verify_demo_ui.py --backend-url http://127.0.0.1:18000
+```
+
+Smoke exit 0 requires system contract/readiness and all four acceptance references; failures
+are nonzero with fixed stages. Host runs without `--verify-database` explicitly mark direct
+DB verification SKIP/NOT VERIFIED. Use the flag inside the backend to avoid accidentally
+comparing a different native database. The script verifies actual AppTest/HTTP evidence,
+warnings/history/clear/outage behavior, but does not establish manual browser acceptance.
+Follow [demo.md](demo.md) for the separate manual checklist and [deployment.md](deployment.md)
+for security/hosting prerequisites.
+
+New tests: 12 metadata/transport/credential/CLI unit cases and two real PostgreSQL smoke
+cases forwarding in-process HTTP to the actual API/service/tools. They do not claim network
+deployment verification; the independent Docker/AppTest operational runs supply that.
+The configured full suite passed **470 tests**, including **56 PostgreSQL** and the original
+50 required node IDs, with zero skips. Existing security/reliability suites are reused.
+Measured coverage: **89.90% statements, 84.22% branches** across `src/querypilot`.
+Current CI config collects these new tests and configures the smoke CLI for its image job;
+remote execution of Day 13 changes is pending an explicitly approved push.
 
 ## Day 12 CI parity and container prerequisites
 

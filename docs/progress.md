@@ -1678,3 +1678,192 @@ Inspected remote run 42970429230 at commit 867b6d3: the quality job passed, incl
 PostgreSQL tests/coverage/gate; the image build step passed but Compose smoke failed with
 the same unquoted tmpfs option-list error. This is the verified local fix being published.
 The new run's actual result will be reported after push, without assuming it is green.
+
+## Day 13 — Private deployment readiness and product demo (2026-11-11)
+
+Inspected the new brief, repository instructions/guides, actual entry points/settings,
+Docker/Compose/CI, shared service, client, smoke/gate and recent Git history. Starting tree
+was clean at **f43b45e**. The brief's pending/uncommitted Day 12 statements were outdated:
+both remote jobs passed in run **43094636403** at that commit. That is verified historical
+Day 12 evidence, not remote verification of today's uncommitted Day 13 changes.
+
+### Plan, deployment decision and scope
+
+Chose a private local Docker demo on existing hardware, with screen sharing/recording,
+rather than public hosting. Researched current official Docker education/personal licensing,
+DigitalOcean VM prices and Render free-service limitations. The deployment guide compares
+cost, complexity, PostgreSQL persistence, HTTPS, secrets, sleep/resource limits and maintenance.
+No provider account/credentials or paid resource was needed. A future VM requires explicit
+budget/provider/host-access approval and access-control design first.
+
+The application has no public authentication/authorization, per-client rate limiting or
+public HTTPS/WSS termination; diagnostic/evidence access also needs protection. **Public
+deployment is blocked** until those gaps are addressed and approved. Existing body limits,
+execution budgets, CORS and container bounds are useful controls, not replacements.
+No complex auth system, cloud infrastructure, image publishing or Day 14 work was added.
+
+### Implementation and files
+
+- Added `compose.demo.yaml`, reusing the Day 12 stack/project/volume. It adds 512 MiB memory,
+  CPU ceilings, 256-PID limits and bounded log rotation. Host ports remain loopback-only;
+  PostgreSQL remains internal. `QP_DEMO_API_ORIGIN` supplies the frontend's internal origin.
+  Added matching Make targets and example configuration. No dependency/lockfile changes.
+- Added `services/smoke.py` and public `querypilot.cli smoke-test`. Bounded system metadata
+  probes plus the existing typed client validate readiness/OpenAPI/capabilities and four
+  versioned mock acceptance responses. Existing scoring checks tools, evidence, ranking,
+  numeric literals and citations. `--verify-database` performs exact fixture checks and
+  fixed independent reader SELECTs; without it, direct DB verification is explicitly SKIP.
+  No raw answers, records, credentials or origin are printed; failed prerequisites stop
+  question submission and exit nonzero. No second agent/live request or writer fallback.
+- Added `scripts/verify_demo_ui.py`: actual Streamlit AppTest through the published
+  container backend, checking rendering, history, clear, selected-record warnings and
+  unreachable-backend presentation. It is not a manual browser/WebSocket acceptance claim.
+- Added 12 unit smoke cases and two real PostgreSQL API/service smoke cases. Existing
+  deployment, security, SDK/protocol, injection, citation, timeout, isolation and cleanup
+  tests are reused. JUnit accounting includes the new PostgreSQL module and still enforces
+  all original 50 node IDs. Existing gold dataset and 24-protected-case baseline unchanged.
+- Existing CI collects the new tests; the image job now configures demo-profile validation
+  and the new real smoke CLI. Local actionlint passes. No workflow was dispatched or pushed.
+- Added `docs/deployment.md` and `docs/demo.md`; updated README, architecture, containers,
+  testing/security guides, goals, plans and instructions. Demo includes a 2–3 minute
+  engineering script, separate 30–45 second recording plan and exact manual checklist.
+  No LinkedIn launch text, resume bullets, recording, screenshots or fake interactions.
+
+### Actual verification results
+
+**LOCAL CI / REAL DATABASE / MOCK PROVIDER VERIFIED:** `scripts/run_checks.py` with the
+acknowledged dedicated native test environment passed **470 tests, 0 failed/skipped** in
+**23.64 seconds**, including **56 PostgreSQL tests** and every original required case.
+The new focused modules passed 12 unit/two real cases. One existing Starlette TestClient/
+httpx deprecation warning remains. Native doctor returned nine PASS, no FAIL and one
+optional backend-URL SKIP. The full 38-case gate still reports **24 pass/14 known fail,
+24 protected, zero regressions**. No failures were hidden or relabeled as production accuracy.
+
+Measured coverage (`src/querypilot`, tests/scripts/third-party code excluded):
+**2591/2882 statements (89.90%)**, **662/786 branches (84.22%)**, **88.69% combined**.
+The old container smoke module and CLI paths outside the coverage invocation remain in the
+denominator. The report is ignored at `.local/ci-coverage.json`.
+
+**DOCKER VERIFIED:** the daemon was initially stopped. After explicit startup approval,
+Docker Desktop started and daemon 29.9.3 was reachable. Both existing Dockerfiles rebuilt
+successfully with locked dependencies and the new source. The resource-limited override
+validated and the stack started healthy against its existing isolated volume; setup exited 0.
+No volume or unrelated container was removed and no native business data was changed.
+
+**REAL DATABASE / MOCK PROVIDER VERIFIED:** the new CLI ran inside the backend against
+`http://backend:8000` with direct reader verification. Every required stage and all four
+acceptance cases passed; **486 failed payment attempts** were independently selected and
+compared with returned API evidence, after exact six-table fixture verification.
+
+| Workflow | Actual result | Per-question HTTP time in first container smoke |
+| --- | --- | ---: |
+| Top five products | Real SQL ranking/reference values, bounded evidence and selected-record notice | 32.713 ms |
+| Return policy | BM25, 30-calendar-day fact, valid retrieved policy citation | 15.490 ms |
+| Revenue + refund policy | SQL and policy sources preserved separately | 28.150 ms |
+| Failed payments + handling | Real 486 count and separate payment policy source | 25.408 ms |
+
+Top product IDs/revenues remain 64/37882.39, 35/36509.32, 21/35946.86, 76/35386.60 and
+63/34591.86 for this verified fixture. Case scoring/reference checks passed; semantic
+faithfulness and claim-level entailment remain NOT EVALUATED. These are local mock timings.
+
+The host CLI on port 18000 separately passed all four questions and API contract checks;
+it correctly marked direct DB comparison SKIP because that flag was omitted. The container
+probe supplied the same-database independent evidence. Reports are ignored in `.local/`.
+The unchanged full benchmark gate also passed inside Docker with all 14 known failures
+visible; no paid SDK call was made.
+
+### Automated UI, manual browser and recovery
+
+**AUTOMATED UI VERIFIED, NOT MANUAL:** AppTest submitted the four questions through actual
+HTTP to the container backend/database. It rendered **8 chat messages, 3 SQL tables and
+3 document citations**. Mock mode, selected-record warnings, history across reruns, clearing
+history and a safe unreachable-backend message all passed. It runs the actual frontend
+code on the host; it does not claim graphical interaction with the container's Streamlit
+browser/WebSocket session. The container frontend root endpoint returned 200.
+
+The first UI-script run failed because AppTest resolves relative paths against the calling
+script, not the working directory. Fixed the new verification script to use the absolute
+repository app path and reran successfully. Benign bare-mode ScriptRunContext warnings
+were emitted; no application exception remained. Early Ruff wrapping findings were fixed.
+
+No graphical browser-control tool was available. **MANUAL BROWSER ACCEPTANCE — NOT VERIFIED.**
+No screenshot or recording is claimed. The exact 12-item checklist in `docs/demo.md` is the
+user action required, covering real browser load/connectivity, mock label, submissions,
+tables/citations/panels/warnings, history/clear, outage and refresh behavior.
+
+Stopped only this project's DB: health stayed 200, the new smoke exited 1 at readiness
+and submitted no questions. Stopped its backend: smoke exited 1 at liveness with safe
+diagnostics. Restored the profile; all services became healthy, setup repeated successfully
+and all four smoke cases/direct SQL checks passed again. Volume creation identity and
+PostgreSQL system identifier matched before/after. Original data persisted.
+Existing full-suite real wrong-password, missing-migration/seed tests and document/provider/
+timeout/partial-result regressions also passed; no redundant failure framework was added.
+
+The bounded container log credential scan passed before/after recovery. Existing non-root,
+reader-only, no-host-DB-port, no-socket-mount and safe trace boundaries were preserved.
+No formal security audit, public load test or injection-immunity claim is made.
+
+### Performance/resource snapshot
+
+Actual cached-image start with the existing fixture volume and private profile:
+**17.283 seconds** until Compose reported all healthy. Backend readiness was observed at
+**17.352 seconds**, after that wait; this is not a separately instrumented first-ready timestamp.
+The first direct-database smoke function took **365.959 ms**, excluding Python CLI import/
+process startup; the four question times above include HTTP/service work. Separate single
+GET observations were health **30.076 ms**, readiness **36.108 ms**, frontend **6.179 ms**.
+No comparison with live API latency, capacity benchmark or speedup is implied.
+
+One near-idle post-probe Docker stats snapshot (512 MiB configured per-service limit):
+
+| Container | Memory | CPU |
+| --- | ---: | ---: |
+| PostgreSQL | 56.68 MiB | 0.00% |
+| Backend | 99.05 MiB | 0.27% |
+| Frontend | 56.16 MiB | 0.62% |
+
+These are snapshots, not peaks or concurrent-user sizing. The frontend had process/HTTP
+health traffic, not a manually driven browser session. No monitoring stack was installed.
+Measurements/safe smoke reports are ignored under `.local/day13-*`.
+
+### CI/Git and final scope
+
+The already approved Day 12 push **f43b45e** passed remote run **43094636403**, with both
+quality and image jobs green. That result predates these new files. There is no approved
+Day 13 push, so report **CI CONFIGURED — REMOTE EXECUTION NOT VERIFIED for Day 13**.
+The local workflow validator passes; local success does not certify unexecuted GitHub jobs.
+No commit, push, workflow dispatch or public deployment was performed.
+
+Demo guides/operator plans are ready. The private stack is left healthy on loopback
+18000/18501 so the user can perform manual acceptance; use `make demo-down` afterward to
+stop it while retaining data. Pending items are manual browser acceptance, Day 13 remote
+CI after explicit Git approval, and optional approved live OpenAI verification. Public
+deployment remains blocked by the documented essential controls. No implementation
+blocker remains for the selected private-demo strategy.
+
+Recommended logical commits after approval: private deployment profile; smoke CLI;
+security/deployment review; smoke/acceptance tests and UI verifier; demo plans; progress/
+architecture/CI documentation. Day 14 preview is portfolio/documentation polish and final
+presentation work; it has not started and no resume or launch copy was created.
+
+Final checks: Ruff lint, format (**127 files already formatted**), actionlint and whitespace
+passed. A configured-secret scan of **21** changed/untracked nonignored files found no
+matching private credential values; settings and measurement reports are confirmed ignored.
+The final resolved-policy check initially compared Compose's string-valued byte limit with
+an integer; normalized the one-off verifier and confirmed actual Docker HostConfig memory
+536870912 bytes, 256 PIDs and configured CPU ceilings. No application/configuration change
+was needed. Final backend readiness and frontend endpoints returned 200, with the private
+demo healthy for the user's manual checklist. No commit/push occurred.
+
+### Day 13 Git publication follow-up (2026-11-12)
+
+The user explicitly approved publishing today's Day 13 changes to the existing GitHub
+repository in focused commits. Review, private credential screening and local CI checks
+are being repeated before publication. Remote Day 13 CI remains pending until its actual
+workflow finishes. No Day 14 work, paid API calls or public deployment is authorized.
+
+Publication validation: the first sandboxed run passed 414 tests but could not access
+PostgreSQL (56 setup errors: operation not permitted). Repeating with approved local
+network access passed the full CI runner, including all 470 tests, 56 PostgreSQL cases,
+Ruff, doctor and the 24-protected-case regression gate. Actionlint and whitespace checks
+also pass. Credential-value screening found no private values in the 21 publication files;
+the only URL-pattern matches were documented USER:ENCODED_PASSWORD placeholders.

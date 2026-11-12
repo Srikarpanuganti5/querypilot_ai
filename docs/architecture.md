@@ -1,6 +1,6 @@
 # Architecture
 
-## Current state: Day 12
+## Current state: Day 13
 
 The installable Python package now provides a FastAPI application, health and metadata
 routes, generated API documentation, environment settings, JSON logs, explicit-origin CORS,
@@ -9,7 +9,28 @@ by migration, seed, and verification commands. API initialization remains databa
 The direct OpenAI adapter and bounded multi-step service are implemented with mock/protocol
 verification; actual OpenAI verification is pending. Day 9 adds Streamlit chat and an
 agent HTTP endpoint for local development. Persistent agent memory, public deployment
-remain outside the implemented scope. CI is configured but remote execution is unverified.
+remain outside the implemented scope. Day 12 CI passed remotely; Day 13 changes are not
+remotely verified until an approved push.
+
+## Private deployment and smoke verification
+
+Day 13 chooses the existing local/private Docker architecture instead of adding cloud
+infrastructure or complex identity services. The demo override adds resource/log bounds
+and an environment-driven frontend origin; existing setup, persistent volume, loopback
+ports, reader credentials, health dependencies and graceful shutdown remain authoritative.
+Public hosting is blocked until access control, rate limiting and HTTPS are supplied.
+
+`services/smoke.py` composes bounded metadata probes, the existing typed client and
+versioned acceptance checks. Explicit mock requests traverse the existing API/shared agent.
+An optional direct-reader stage reuses exact fixture verification and fixed independent
+SELECTs, then compares returned API evidence. No evaluation-only agent or writer fallback
+exists. JSON stages/case timings are safe diagnostics, not raw prompts/results/settings.
+The operational UI script runs AppTest → actual HTTP → container tools; manual browser
+acceptance is a separate checklist. See [deployment.md](deployment.md) and [demo.md](demo.md).
+
+Day 12 remote CI is verified at f43b45e; Day 13's uncommitted changes are not remotely
+verified. Existing native/protocol/security tests are retained and new smoke tests are
+collected automatically. No public deployment or live API validation is claimed.
 
 ## Container architecture and CI
 
