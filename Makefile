@@ -1,6 +1,6 @@
 PYTHON ?= .venv/bin/python
 DC = docker compose --env-file .env.docker
-.PHONY: lint test ci gate doctor docker-env build up down docker-test smoke
+.PHONY: lint test ci gate doctor docker-env build up down docker-test smoke demo-up demo-down demo-smoke
 lint:
 	$(PYTHON) -m ruff check .
 	$(PYTHON) -m ruff format --check .
@@ -24,3 +24,9 @@ docker-test:
 	$(DC) -p querypilot_day12_test -f compose.yaml -f compose.test.yaml run --build --rm tests
 smoke:
 	$(DC) exec -T backend python -m querypilot.services.container_smoke
+demo-up:
+	$(DC) -f compose.yaml -f compose.demo.yaml up --build --wait --wait-timeout 180
+demo-down:
+	$(DC) -f compose.yaml -f compose.demo.yaml down --timeout 40
+demo-smoke:
+	$(DC) -f compose.yaml -f compose.demo.yaml exec -T backend python -m querypilot.cli smoke-test --backend-url http://backend:8000 --verify-database

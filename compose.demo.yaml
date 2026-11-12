@@ -1,0 +1,29 @@
+# Private demo only. Inherits loopback bindings, isolated volume, reader-only API and mock mode.
+services:
+  db:
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 256
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "3"}
+  setup:
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 256
+  backend:
+    mem_limit: 512m
+    cpus: 2.0
+    pids_limit: 256
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "3"}
+  frontend:
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 256
+    environment:
+      QUERYPILOT_API_BASE_URL: ${QP_DEMO_API_ORIGIN:-http://backend:8000}
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "3"}
