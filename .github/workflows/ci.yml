@@ -62,8 +62,10 @@ jobs:
       - name: Compose runtime, workflows, restart and persistence smoke
         run: |
           python3 scripts/prepare_docker.py
+          docker compose --env-file .env.docker -f compose.yaml -f compose.demo.yaml config --quiet
           docker compose --env-file .env.docker up --build --wait --wait-timeout 180
           docker compose --env-file .env.docker exec -T backend python -m querypilot.services.container_smoke
+          docker compose --env-file .env.docker exec -T backend python -m querypilot.cli smoke-test --backend-url http://backend:8000 --verify-database
           mkdir -p .local
           docker volume inspect querypilot_day12_postgres_data --format '{{.CreatedAt}}' > .local/volume-before
           docker compose --env-file .env.docker stop db

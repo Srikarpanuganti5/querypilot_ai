@@ -18,6 +18,7 @@ def check(path: Path, minimum_postgres: int = 50) -> dict:
             "test_real_workflows",
             "test_evaluation_postgres",
             "test_deployment_postgres",
+            "test_demo_postgres",
         }
     ]
     if not cases or any(
