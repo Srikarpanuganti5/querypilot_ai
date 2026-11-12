@@ -7,8 +7,9 @@ isolated verification. Both images built, all four workflows and the protected b
 cases passed, and outage/restart/persistence/shutdown checks passed. An unquoted tmpfs
 option list required a one-line quoting fix. The stack is now shut down with its database
 volume retained. Details and nonfatal warnings are in [progress.md](progress.md).
-Day 12's follow-up CI passed remotely on f43b45e. Current uncommitted Day 13 changes are
-**CI CONFIGURED — REMOTE EXECUTION NOT VERIFIED**. **LIVE OPENAI NOT VERIFIED**;
+Day 12's follow-up CI passed remotely on f43b45e. Day 13 was pushed through 9ab3c07; see
+[its workflow run](https://github.com/Srikarpanuganti5/querypilot_ai/actions/runs/43164942219)
+for the actual remote status. **LIVE OPENAI NOT VERIFIED**;
 containers and CI default to deterministic mock mode.
 No cloud deployment or image publishing is included.
 

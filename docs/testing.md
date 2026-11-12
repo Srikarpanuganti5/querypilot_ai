@@ -26,7 +26,7 @@ The configured full suite passed **470 tests**, including **56 PostgreSQL** and 
 50 required node IDs, with zero skips. Existing security/reliability suites are reused.
 Measured coverage: **89.90% statements, 84.22% branches** across `src/querypilot`.
 Current CI config collects these new tests and configures the smoke CLI for its image job;
-remote execution of Day 13 changes is pending an explicitly approved push.
+Day 13 was pushed through 9ab3c07; its remote run is linked in progress.md.
 
 ## Day 12 CI parity and container prerequisites
 

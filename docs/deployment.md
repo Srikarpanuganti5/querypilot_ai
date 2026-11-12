@@ -120,8 +120,8 @@ mode, four workflows, evidence rendering, selected-record warnings, history, cle
 backend-unreachable feedback. Use the manual checklist in [demo.md](demo.md) for actual
 browser/WebSocket behavior and screenshots. Manual acceptance remains pending.
 
-The Day 12 push at f43b45e has remote CI evidence (both jobs green). Today's Day 13 files
-have an approved push pending remote execution, so **CI CONFIGURED — REMOTE EXECUTION NOT
-VERIFIED for Day 13**. The existing workflow automatically collects the new tests and now
-also configures the new smoke CLI/demo-profile validation for a future approved push.
-Git publication was approved on 2026-11-12. No images are published by this workflow.
+The Day 12 push at f43b45e has remote CI evidence (both jobs green). Day 13 was
+published in six focused commits through 9ab3c07 after explicit approval on 2026-11-12.
+Its [actual GitHub Actions run](https://github.com/Srikarpanuganti5/querypilot_ai/actions/runs/43164942219)
+provides the remote result; configuration alone is not proof of success. No images are
+published by this workflow and no public deployment is performed.

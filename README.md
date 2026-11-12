@@ -39,7 +39,9 @@ results. Host-side direct DB verification is explicitly skipped unless `--verify
 is requested with matching reader settings. No credentials or raw replies are printed.
 
 Manual browser acceptance and live OpenAI remain **NOT VERIFIED**. Day 12 remote CI passed
-on `f43b45e`; unpushed Day 13 changes have not executed remotely. The local benchmark still
+on `f43b45e`; Day 13 was pushed through `9ab3c07`. See the
+[Day 13 CI run](https://github.com/Srikarpanuganti5/querypilot_ai/actions/runs/43164942219)
+for its actual remote status. The local benchmark still
 passes **24/38**, with **14 known failures**, and does not measure production-level accuracy.
 
 ## Docker quick start and CI

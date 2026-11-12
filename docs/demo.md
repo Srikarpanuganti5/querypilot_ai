@@ -33,7 +33,7 @@ deployed service or a verified live LLM product. No launch copy or resume conten
 | 1:05–1:25 | Ask “What is our return policy?” Show the 30-calendar-day statement and exact `QP-RET-001#s002-c001` citation. |
 | 1:25–1:50 | Ask “Which products generated the most revenue, and what is our refund policy?” Expand execution details and show SQL/document evidence retained separately. |
 | 1:50–2:15 | Explain fixed parameterized SELECTs, a SELECT-only DB role, isolated setup credentials, strict arguments, deadlines, safe errors and bounded responses. Show the local smoke command or test summary. |
-| 2:15–2:40 | State “The deterministic mock benchmark passes 24 of 38 cases. Fourteen failures remain visible, including routing, filters and abstention. This is not measured live LLM accuracy or semantic faithfulness.” Mention Docker and the previous verified Day 12 CI run; distinguish unpushed Day 13 changes. |
+| 2:15–2:40 | State “The deterministic mock benchmark passes 24 of 38 cases. Fourteen failures remain visible, including routing, filters and abstention. This is not measured live LLM accuracy or semantic faithfulness.” Mention Docker and show the actual Day 13 CI run status; do not infer success from a workflow file. |
 | 2:40–3:00 | Optional payments question, independently verified for the current fixture. Explain the next improvement target and stop. Do not claim an arbitrary fixture always has 486 failures. |
 
 If time is short, omit the optional payment interaction, not the evaluation limitations.

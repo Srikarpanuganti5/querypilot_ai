@@ -8,8 +8,7 @@ Day 11 adds evaluation/benchmarking with actual tools and mock provider; live ev
 and semantic judgments remain unverified. The user has now approved Day 11 commits and push.
 Day 12's Docker fix and verification were pushed through f43b45e; both remote CI jobs pass.
 Day 13 adds private-demo configuration, bounded smoke CLI, acceptance verification and demo
-plans. The user approved focused Day 13 commits and push on 2026-11-12. Current
-remote CI evidence applies to Day 12, not these changes. Manual browser/live API remain pending.
+plans. The user approved focused Day 13 commits and push on 2026-11-12. Day 13 was published through 9ab3c07; its remote CI result is linked in docs/progress.md. Manual browser/live API remain pending.
 The master brief ended during Day 6; the remaining sequence is proposed and respects
 the requested Day 9 interface and later Docker/CI milestones.
 
@@ -27,7 +26,7 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 10 | Completed real integration coverage, SQL diagnostics and local readiness | 383 passed; 48 real PostgreSQL cases; actual HTTP/UI workflows; live OpenAI unverified |
 | 11 | Agent evaluation and benchmarking | 38 cases; tested metrics/reports; real fixture and documents; mock weaknesses retained |
 | 12 | Docker Compose & GitHub Actions CI | Native and Docker checks pass; both remote CI jobs passed at f43b45e |
-| 13 | Private deployment readiness & end-to-end demo | 470 local tests; real container smoke/UI/gate/recovery; manual browser and Day 13 remote CI pending |
+| 13 | Private deployment readiness & end-to-end demo | 470 local tests; real container smoke/UI/gate/recovery; remote CI passed at 9ab3c07; manual browser pending |
 | 14 | Portfolio review and demonstration | Acceptance review and documented limitations |
 
 ## Day 1 plan

@@ -1867,3 +1867,16 @@ network access passed the full CI runner, including all 470 tests, 56 PostgreSQL
 Ruff, doctor and the 24-protected-case regression gate. Actionlint and whitespace checks
 also pass. Credential-value screening found no private values in the 21 publication files;
 the only URL-pattern matches were documented USER:ENCODED_PASSWORD placeholders.
+
+Publication succeeded: six focused commits, 8326e72, 2271a30, 18c795d, 6501f8a,
+ba5507e and 9ab3c07, were pushed to the existing origin/main without rewriting history.
+The [Day 13 CI run](https://github.com/Srikarpanuganti5/querypilot_ai/actions/runs/43164942219)
+was triggered by 9ab3c07. Its remote outcome must be checked directly; the earlier pending
+statements above describe the original local implementation, before this approval.
+
+Remote Day 13 verification **PASSED** at 9ab3c07 in run 43164942219: quality completed
+in 1m34s and images in 1m31s. The jobs include the full test/database/gate checks, both
+image builds, the new smoke CLI, existing container workflows, recovery/persistence/log
+screening and clean shutdown. GitHub emitted a nonblocking Node.js 20 deprecation notice
+for the existing pinned checkout/setup-python actions (forced to Node.js 24). No tests or
+baseline assertions were weakened. Manual browser acceptance and live OpenAI stay unverified.

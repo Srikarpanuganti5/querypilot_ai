@@ -9,8 +9,8 @@ by migration, seed, and verification commands. API initialization remains databa
 The direct OpenAI adapter and bounded multi-step service are implemented with mock/protocol
 verification; actual OpenAI verification is pending. Day 9 adds Streamlit chat and an
 agent HTTP endpoint for local development. Persistent agent memory, public deployment
-remain outside the implemented scope. Day 12 CI passed remotely; Day 13 changes are not
-remotely verified until an approved push.
+remain outside the implemented scope. Day 12 CI passed remotely; Day 13 was pushed through 9ab3c07.
+The linked CI run in progress.md records the remote Day 13 status.
 
 ## Private deployment and smoke verification
 
@@ -28,8 +28,8 @@ exists. JSON stages/case timings are safe diagnostics, not raw prompts/results/s
 The operational UI script runs AppTest → actual HTTP → container tools; manual browser
 acceptance is a separate checklist. See [deployment.md](deployment.md) and [demo.md](demo.md).
 
-Day 12 remote CI is verified at f43b45e; Day 13's uncommitted changes are not remotely
-verified. Existing native/protocol/security tests are retained and new smoke tests are
+Day 12 remote CI is verified at f43b45e; Day 13 was published through 9ab3c07.
+See progress.md for its remote CI run. Existing native/protocol/security tests are retained and new smoke tests are
 collected automatically. No public deployment or live API validation is claimed.
 
 ## Container architecture and CI
