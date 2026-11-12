@@ -20,8 +20,13 @@ def main() -> None:
 
         eval_main(sys.argv[2:])
         return
+    if sys.argv[1:2] == ["smoke-test"]:
+        from querypilot.services.smoke import main as smoke_main
+
+        smoke_main(sys.argv[2:])
+        return
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["ask", "doctor", "eval"])
+    parser.add_argument("command", choices=["ask", "doctor", "eval", "smoke-test"])
     parser.parse_args()
 
 
