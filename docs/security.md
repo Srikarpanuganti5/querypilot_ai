@@ -1,8 +1,17 @@
-# Security and reliability boundaries (through Day 13)
+# Security and reliability boundaries
 
 This is an engineering review with deterministic adversarial tests and a dependency
 advisory check. It is not a formal security audit or penetration test. Only synthetic,
 publicly shareable data is supported. Actual live OpenAI behavior remains unverified.
+
+## Final review scope
+
+Day 14 reuses the security regression suite, audits tracked/new public files and generated
+reports for configured-secret values/credential patterns, verifies ignore rules, and checks
+actual container privilege/port boundaries. Exact findings are in [final-verification.md](final-verification.md).
+This is scoped engineering verification, not a formal audit or exhaustive secret/history
+scanner. The older dependency advisory result below is historical, not a new vulnerability
+audit. No paid requests, public resource creation or release publication are authorized.
 
 ## Public-exposure review and decision
 

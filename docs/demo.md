@@ -2,7 +2,11 @@
 
 This is a private local Docker demonstration using synthetic data and a deterministic
 mock provider. It demonstrates backend engineering and evidence flow. It is not a publicly
-deployed service or a verified live LLM product. No launch copy or resume content is included.
+deployed service or a verified live LLM product. Draft portfolio/launch materials are in [portfolio.md](portfolio.md) and
+[linkedin-launch.md](linkedin-launch.md); neither is published.
+
+Latest metrics/verification: [final-verification.md](final-verification.md). No screenshot
+or recording is supplied; the capture plan below remains future operator work.
 
 ## Operator checklist
 

@@ -1,17 +1,13 @@
-# Containers and CI — Day 12
+# Containers and CI
 
 ## Status and scope
 
-**DOCKER VERIFIED on 2026-11-11:** the user made Docker Desktop available and authorized
-isolated verification. Both images built, all four workflows and the protected benchmark
-cases passed, and outage/restart/persistence/shutdown checks passed. An unquoted tmpfs
-option list required a one-line quoting fix. The stack is now shut down with its database
-volume retained. Details and nonfatal warnings are in [progress.md](progress.md).
-Day 12's follow-up CI passed remotely on f43b45e. Day 13 was pushed through 9ab3c07; see
-[its workflow run](https://github.com/Srikarpanuganti5/querypilot_ai/actions/runs/43164942219)
-for the actual remote status. **LIVE OPENAI NOT VERIFIED**;
-containers and CI default to deterministic mock mode.
-No cloud deployment or image publishing is included.
+The full private-demo profile is verified locally; latest commands/results are in
+[final verification](final-verification.md). Earlier Docker and outage/persistence checks
+are recorded chronologically in [progress](progress.md). Both remote jobs passed at
+`6135c17` in [run 43165208641](https://github.com/Srikarpanuganti5/querypilot_ai/actions/runs/43165208641).
+Day 14 publication was approved on 2026-11-13; its remote CI must be checked after pushing. No cloud deployment, image publication
+or live OpenAI verification is included.
 
 ## Day 13 private-demo override
 
@@ -161,7 +157,7 @@ The image job builds both runtime images without login/push/registry credentials
 configures a fresh Compose project, verifies actual HTTP workflows and frontend health,
 checks stopped-database liveness/readiness, restarts services, compares volume creation
 identity and re-verifies exact fixture data, scans bounded logs without echoing them and
-shuts down without removing volumes. This job is configured, not remotely verified.
+shuts down without removing volumes. Both jobs were remotely verified for 6135c17; recheck the exact source revision after future pushes.
 
 ## Failure diagnosis and recovery
 
@@ -177,7 +173,7 @@ shuts down without removing volumes. This job is configured, not remotely verifi
 - Workflow gate fails: review exact case regressions, fixture/corpus/dataset hashes and
   prerequisite failures; never regenerate expected answers or accept all current output.
 
-Repeat runtime/persistence checks when Docker becomes available:
+To repeat the verified runtime/persistence checks:
 
 ```sh
 make smoke

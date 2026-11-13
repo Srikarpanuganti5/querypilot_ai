@@ -1,4 +1,9 @@
-# Local testing and verification — Days 10–13
+# Local testing and verification — final review
+
+Current results and exact final commands: [final-verification.md](final-verification.md).
+Historical milestone results below retain their original scopes. Use the locked coverage
+dependency through `scripts/run_checks.py`; workstation-specific temporary coverage paths
+are historical command records, not setup prerequisites.
 
 ## Day 13 smoke and acceptance
 
@@ -47,7 +52,7 @@ database. The follow-up verification on 2026-11-11 built both runtime images and
 startup, all four workflows, benchmark gate, outage recovery, restart, persistence and
 shutdown in the main isolated Compose stack. This does not claim the separate Docker test
 profile or GitHub workflow ran. See [containers.md](containers.md) for commands and limits.
-GitHub Actions is configured; remote execution has not occurred for these uncommitted files.
+Both GitHub jobs passed at 6135c17 (Day 13). Uncommitted Day 14 work has no remote result.
 
 ## Day 11 benchmark and tests
 
@@ -97,7 +102,7 @@ installation lost standard-library files; no committed runtime path or dependenc
 | --- | --- |
 | Unit and protocol tests | Deterministic assertions; do not establish external service readiness |
 | Mocked integration | MOCK PROVIDER VERIFIED / MOCK HTTP VERIFIED where provider or transport is replaced |
-| PostgreSQL integration | REAL DATABASE VERIFIED: 48 cases, actual PostgreSQL, restricted reader and synthetic data |
+| PostgreSQL integration (historical Day 10) | REAL DATABASE VERIFIED: 48 cases, actual PostgreSQL, restricted reader and synthetic data |
 | Local HTTP | MOCK PROVIDER VERIFIED + REAL DATABASE VERIFIED: actual TCP FastAPI requests, real tools |
 | Streamlit | UI VERIFIED: isolated AppTest plus AppTest using actual HTTP and PostgreSQL; no manual browser review claimed |
 | Live OpenAI | NOT VERIFIED: no paid requests, no inference about live selection or answer quality |
@@ -127,8 +132,8 @@ Both defects received failing tests before their fixes; real provider behavior i
 ## Repeatable native setup
 
 Prerequisites: installed development dependencies and native PostgreSQL binaries (`initdb`,
-`pg_ctl`, `psql`), discovered on PATH or in `/opt/homebrew/bin`. Docker was unavailable in
-this environment; the existing PostgreSQL engine and Alembic infrastructure were used.
+`pg_ctl`, `psql`), discovered on PATH or in `/opt/homebrew/bin`. Native preparation uses the existing PostgreSQL engine and Alembic infrastructure;
+Docker is an alternative verified path, not a prerequisite for native setup.
 From the repository root:
 
 ```sh
@@ -229,4 +234,4 @@ and [SQLAlchemy error documentation](https://docs.sqlalchemy.org/en/21/errors.ht
 
 No live OpenAI, manual browser acceptance, public deployment or formal security audit was
 performed. Existing grounding, credential-screening and cancellation limitations remain
-documented in the agent and security guides. Day 11 evaluation work has not started.
+documented in the agent and security guides. The implemented evaluation framework is described in [evaluation.md](evaluation.md).

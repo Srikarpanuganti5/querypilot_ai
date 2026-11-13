@@ -1,6 +1,10 @@
-# Agent evaluation — Day 11
+# Agent evaluation
 
-## Day 12 reviewed regression gate
+Latest review: [final verification](final-verification.md). All 14 failed cases, verified
+root causes and improvement priorities are listed in [benchmark-backlog.md](benchmark-backlog.md).
+No labels, baselines or mock behavior changed during the final review.
+
+## Reviewed regression gate
 
 `data/evaluations/baseline_day11.json` records the reviewed Day 11 dataset/corpus/fixture
 hashes, reference date/seed, source commit and explicit 24 passing/14 failing case IDs.
@@ -70,11 +74,13 @@ From the repository root, with installed development dependencies, prepared nati
 PostgreSQL and a configured restricted `READER_DATABASE_URL`:
 
 ```sh
-.venv/bin/python scripts/build_evaluation_dataset.py
 .venv/bin/python -m querypilot.cli doctor --reference-date 2026-10-27
 .venv/bin/python -m querypilot.cli eval --mode mock --output reports/evaluation/day11
 .venv/bin/python -m querypilot.cli eval --category documents --limit 1 --output reports/evaluation/doc-smoke
 ```
+
+The dataset-builder script is a maintainer operation, not a prerequisite for running the
+benchmark. Do not rebuild versioned ground truth during validation.
 
 The full benchmark currently exits **1** because some cases fail their expectations;
 reports are still saved. That is a measured benchmark outcome, not a failing pytest suite.

@@ -1,5 +1,9 @@
 # Deployment readiness — Day 13
 
+Current local/remote source boundaries are in [final verification](final-verification.md).
+Day 14 prepares documentation only; it does not approve a public deployment or paid hosting.
+The cost research below is dated historical research and must be rechecked before spending.
+
 ## Recommended strategy
 
 Use the existing Docker Compose stack as a **private local, mock-provider demo**, shared
@@ -120,8 +124,8 @@ mode, four workflows, evidence rendering, selected-record warnings, history, cle
 backend-unreachable feedback. Use the manual checklist in [demo.md](demo.md) for actual
 browser/WebSocket behavior and screenshots. Manual acceptance remains pending.
 
-The Day 12 push at f43b45e has remote CI evidence (both jobs green). Day 13 was
-published in six focused commits through 9ab3c07 after explicit approval on 2026-11-12.
-Its [actual GitHub Actions run](https://github.com/Srikarpanuganti5/querypilot_ai/actions/runs/43164942219)
-provides the remote result; configuration alone is not proof of success. No images are
+Day 13 was published in seven commits through 6135c17 after explicit approval.
+Both jobs passed in its [actual GitHub Actions run](https://github.com/Srikarpanuganti5/querypilot_ai/actions/runs/43165208641).
+Day 14 publication was approved on 2026-11-13; check the new CI run after pushing.
+Configuration alone is not proof of success. No images are
 published by this workflow and no public deployment is performed.
