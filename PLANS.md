@@ -1,16 +1,11 @@
 # Development roadmap
 
-Days 1–12 are implemented and pushed. Day 10 diagnoses SQL setup, adds safe readiness
-checks and repeatable local dev/test preparation, and automates actual PostgreSQL/HTTP/UI
-verification. Results are recorded in docs/progress.md. Live OpenAI behavior remains
-separately pending. The user has approved Day 10 commits and push to the existing repository.
-Day 11 adds evaluation/benchmarking with actual tools and mock provider; live evaluation
-and semantic judgments remain unverified. The user has now approved Day 11 commits and push.
-Day 12's Docker fix and verification were pushed through f43b45e; both remote CI jobs pass.
-Day 13 adds private-demo configuration, bounded smoke CLI, acceptance verification and demo
-plans. The user approved focused Day 13 commits and push on 2026-11-12. Day 13 was published through 9ab3c07; its remote CI result is linked in docs/progress.md. Manual browser/live API remain pending.
-The master brief ended during Day 6; the remaining sequence is proposed and respects
-the requested Day 9 interface and later Docker/CI milestones.
+Days 1–13 are implemented and pushed through 6135c17. Both GitHub Actions jobs passed
+for that exact commit. Day 14 final review is complete locally; the user approved focused commits/push on
+2026-11-13. Check the actual GitHub Actions result for the published revision.
+Manual browser acceptance, live OpenAI and public deployment remain unverified. Earlier
+sections record historical milestone plans/results; the latest verification is in
+[docs/final-verification.md](docs/final-verification.md).
 
 | Day | Scope | Intended validation |
 | --- | --- | --- |
@@ -27,7 +22,7 @@ the requested Day 9 interface and later Docker/CI milestones.
 | 11 | Agent evaluation and benchmarking | 38 cases; tested metrics/reports; real fixture and documents; mock weaknesses retained |
 | 12 | Docker Compose & GitHub Actions CI | Native and Docker checks pass; both remote CI jobs passed at f43b45e |
 | 13 | Private deployment readiness & end-to-end demo | 470 local tests; real container smoke/UI/gate/recovery; remote CI passed at 9ab3c07; manual browser pending |
-| 14 | Portfolio review and demonstration | Acceptance review and documented limitations |
+| 14 | Final engineering review and portfolio/handoff drafts | Full local/DB/Docker/gate recheck; manual/live pending; Git publication approved |
 
 ## Day 1 plan
 
@@ -192,3 +187,16 @@ under the user's approval, now received; no image publishing, remote deployment 
 No dependency additions, second agent, provider changes, cloud resources or Day 14 work.
 The 24/38 mock benchmark is not production accuracy. Public/manual/live verification is
 not implied by local smoke success. The user approved focused commits and push on 2026-11-12; check actual remote CI afterward.
+
+## Day 14 final review plan
+
+1. Audit committed state, documentation, source/lock/CI and private/generated boundaries.
+2. Replace outdated planned-state README text and architecture with current diagrams/commands.
+3. Record every known failed benchmark case and a scoped, independently verifiable backlog.
+4. Draft portfolio/interview, unpublished launch and complete developer handoff documents.
+5. Recheck native full CI, Docker images/profile, four workflows, independent SQL, UI AppTest,
+   reports, reader permissions, docs links, credential screening and workflow syntax.
+6. Record exact results and pending boundaries; propose focused commits and stop for approval.
+
+No runtime/provider changes, dependency updates, new hosting, paid API calls or automatic
+commit/push/tag/post. The final scope does not authorize any future backlog implementation.

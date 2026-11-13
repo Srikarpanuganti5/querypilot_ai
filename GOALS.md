@@ -197,3 +197,14 @@ No endpoints, database connections, tools, UI, Docker, or CI on Day 1.
 - Reuse full security/reliability tests, preserve original required PostgreSQL cases and gate.
 - Record actual performance/coverage, technical demo and separate recording/operator plans.
 - No cloud provisioning, paid calls, Git publication or Day 14 polish without approval.
+
+## Day 14 acceptance criteria
+
+- Present actual implemented APIs/tools in a concise README and accurate architecture diagrams.
+- Review documentation commands/links, tracked files, ignore boundaries and credentials.
+- Rerun full quality checks with all real PostgreSQL cases, Docker workflows and original gate.
+- Keep 14 benchmark failures visible with verified causes, impact and a scoped improvement backlog.
+- Draft SDE resume/interview material, LinkedIn assets and a complete developer handoff.
+- Distinguish current local results, published-commit remote CI and pending browser/live checks.
+- No unrelated features, destructive cleanup, paid requests, public resources or publication.
+- Prepare focused Git groups; require new approval before commits/push/tags.

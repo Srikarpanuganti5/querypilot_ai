@@ -1880,3 +1880,115 @@ image builds, the new smoke CLI, existing container workflows, recovery/persiste
 screening and clean shutdown. GitHub emitted a nonblocking Node.js 20 deprecation notice
 for the existing pinned checkout/setup-python actions (forced to Node.js 24). No tests or
 baseline assertions were weakened. Manual browser acceptance and live OpenAI stay unverified.
+
+## Day 14 — Final engineering review and portfolio handoff (2026-11-12)
+
+### Starting state and plan
+
+Read the final milestone brief and repository specifications/guides, inspected source/tests,
+lock/dependencies, Docker/Compose, CI and Git history. Initial tree was clean on main at
+6135c17, already pushed. Days 10–13 do not need recommitting. Read-only GitHub inspection
+confirmed both jobs succeeded in run 43165208641 for that exact commit. The brief's older
+f43b45e CI reference was historical. No Day 14 publication, paid call or public deployment
+is authorized. The implementation plan was shared before edits.
+
+### Documentation and review changes
+
+Replaced the chronological/partly planned-state README with current capabilities, actual
+API paths, concise engineering decisions, technology groups, private-demo setup, verified
+metrics and limitations. Removed stale claims that the tmpfs fix was uncommitted or Docker
+was unavailable; /api/v1/chat is explicitly absent. Preserved detailed topic guides instead
+of duplicating their entire history in the README. Rebuilt architecture.md around actual
+request/evidence/worker boundaries plus request and container Mermaid diagrams.
+
+Added docs/README.md navigation, final-handoff.md and final-verification.md; corrected current
+status/commands in testing, containers, evaluation, deployment, demo and security. Removed
+reference-dataset rebuilding from routine evaluation instructions. Historical evidence in
+this progress log remains chronological. No existing files were deleted.
+
+Added benchmark-backlog.md with all 14 failed IDs, report-confirmed checks/causes, priorities,
+impact and required future verification. Wrong routing, dropped date/customer filters,
+missing payment intents and abstention account for failures; none currently fail the
+partial check. The negative cases do not demonstrate successful writes or secret access.
+No mock code, gold reference, baseline or scoring change was made.
+
+Added portfolio.md with a project summary, three measured resume bullets, 30/90-second and
+2–3-minute explanations, actual debugging challenges and system-design answers. Added
+linkedin-launch.md with unpublished post, five-slide outline, clip script, exact suggested
+captures and a user-review/publication checklist. No screenshot, recording or rendered
+carousel was fabricated. Updated AGENTS/GOALS/PLANS to authorize final review only, with new
+Git approval required.
+
+Added scripts/check_docs.py for local Markdown targets/fragments/fences without network
+access or a dependency. Isolated positive/negative fixture probes passed; no new software
+tests were added for documentation-only edits. Existing app/source/SQL/dependencies/CI
+remain unchanged. The validator does not render Mermaid or check remote URLs.
+
+### Actual quality and runtime verification
+
+**VERIFIED LOCALLY / REAL DATABASE VERIFIED:** full scripts/run_checks.py with the
+acknowledged native integration environment exited 0: **470 passed, 0 failed, 0 skipped**,
+25.00 seconds; **56 real PostgreSQL cases**, including all original 50 required node IDs.
+Existing security/provider/evaluation/report/HTTP/UI regressions all ran. One existing
+Starlette TestClient/httpx deprecation warning remains. Coverage is **2591/2882 statements
+(89.90%)**, **662/786 branches (84.22%)**, combined **88.69%**, across src/querypilot.
+
+Docker initially failed because its daemon socket was absent. After approved Desktop
+startup, daemon 29.9.3 was reachable. Existing backend/frontend images rebuilt with locked
+dependencies, combined demo config validated and startup completed healthy with setup
+exit 0. The existing isolated volume was preserved; native/unrelated resources untouched.
+**DOCKER VERIFIED / MOCK PROVIDER VERIFIED / REAL DATABASE VERIFIED:** four smoke cases
+passed through actual container backend HTTP and real tools, with exact fixture and
+independent reader SELECT comparisons. The raw benchmark exited 1 at **24/38**, as expected;
+the full native and container regression gates exited 0 with **24 protected, 0 regressions,
+14 known failures**. Tool-set exact match remains 26/38.
+
+Independent SQL in the container DB returned migration **0001**, **486 failed payment
+attempts**, and top-five ID/revenue pairs 64/37882.39, 35/36509.32, 21/35946.86, 76/35386.60,
+63/34591.86. Current fixture values, not universal facts. The direct smoke function took
+404.519 ms (excluding Python startup/import); all four responses completed, with selected
+record partial notices on both top-products workflows. Local mock timings do not measure
+live model latency, load capacity or a performance improvement.
+
+Container doctor returned 8 PASS/0 FAIL/2 optional SKIP (no writer URL for migrations, no
+optional backend URL); setup separately verified Alembic head. Those are not skipped
+automated tests. AppTest through actual container HTTP passed 4 workflows, 8 messages,
+3 SQL tables, 3 citations, warnings, rerun history, clear and backend-unavailable presentation.
+No graphical browser interaction tool is available. **MANUAL BROWSER NOT VERIFIED**; the
+exact checklist remains in demo.md. No genuine media was captured.
+
+### Security, final checks and release boundary
+
+Credential screening reviewed 155 tracked/new nonignored public files and 16 generated
+reports/logs without findings; an additional safe container report was screened separately.
+Configured-private-value and high-confidence key-pattern checks passed. JSON reports parse;
+.env/.env.docker/.local and generated evaluation reports are ignored. Bounded container-log
+credential scan passed; checked recent fatal/error/traceback markers count was zero. Actual
+container inspection confirmed non-root/read-only apps, dropped caps/no privilege escalation,
+loopback ports, no DB host port/socket mount/privileged mode and no backend writer/API key.
+This scoped review is not a formal audit, exhaustive Git-history scan or new vulnerability audit.
+Public access remains blocked by missing authn/authz, rate limits, HTTPS and operational controls.
+
+Final Ruff lint passed, format reported 134 files already formatted; actionlint, whitespace
+and documentation checks (24 Markdown files) passed. Final HTTP liveness/readiness/frontend
+returned 200. Safe evidence/logs remain ignored under .local/day14-*. No files were staged,
+committed, pushed or tagged. No paid usage, image publication or LinkedIn upload occurred.
+
+**CI REMOTE VERIFIED** only for the published Day 13 baseline 6135c17; **Day 14 REMOTE NOT
+VERIFIED** until an explicitly approved future push runs. The stack is left healthy for
+manual acceptance on 18000/18501; make demo-down stops it and retains the volume.
+
+The requested final review/draft handoff is complete locally. Release/publication approval,
+manual browser acceptance/media capture, final user review of launch assets, and any live
+OpenAI/semantic-quality work remain explicit pending boundaries. Suggested focused Git
+groups are navigation/README/diagrams, benchmark/operational guidance, validator/verification,
+portfolio/launch drafts, and handoff/progress/specifications. No automatic Git action.
+
+### Day 14 Git publication approval (2026-11-13)
+
+The user explicitly approved committing and pushing the reviewed Day 14 changes to the
+existing repository in focused groups. Starting publication tree contained exactly the
+19 expected files; runtime/tests/data/dependencies/lock/CI remained unchanged. Documentation,
+Ruff lint/format, actionlint and whitespace checks passed again. Review credentials and
+generated-file boundaries before staging; check actual remote CI after the push. This
+authorizes Git publication only, not tags, deployment, paid calls or posting launch drafts.
